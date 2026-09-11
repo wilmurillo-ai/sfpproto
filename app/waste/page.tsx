@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { wasteItems } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -23,9 +22,7 @@ export default function WastePage() {
   });
 
   return (
-    <>
-      <AppHeader pageTitle="Waste" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Waste</h2>
           <p className="page-subtitle">Scrap, rework, and material waste — Shift 1 · Line A</p>
@@ -150,6 +147,5 @@ export default function WastePage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

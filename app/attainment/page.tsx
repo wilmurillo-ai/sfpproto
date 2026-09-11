@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { attainmentData } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -15,9 +14,7 @@ export default function AttainmentPage() {
   const maxVal = Math.max(...attainmentData.flatMap(r => [r.planned, r.actual]));
 
   return (
-    <>
-      <AppHeader pageTitle="Attainment" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Attainment</h2>
           <p className="page-subtitle">Planned vs Actual units produced per hour</p>
@@ -134,6 +131,5 @@ export default function AttainmentPage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

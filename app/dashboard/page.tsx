@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import {
   dashboardKPIs,
   scheduleBlocks,
@@ -44,9 +43,11 @@ export default function DashboardPage() {
   const attainment = 91;
 
   return (
-    <>
-      <AppHeader pageTitle="Line Dashboard" />
-      <div className="page-content">
+    <div className="page-content">
+      <div className="page-header">
+        <h2 className="page-title">Line Dashboard</h2>
+        <p className="page-subtitle">Real-time KPIs, schedule, and line status overview</p>
+      </div>
         {/* KPI Tiles */}
         <div className="stat-grid">
           {dashboardKPIs.map((kpi) => (
@@ -193,6 +194,5 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import AppHeader from '@/components/AppHeader';
 
 export const metadata: Metadata = {
   title: {
@@ -32,10 +33,14 @@ export default function RootLayout({
       </head>
       <body>
         <div className="app-shell">
-          <Sidebar />
-          <main className="app-main">
-            {children}
-          </main>
+          <AppHeader />
+          <div className="app-body">
+            {/* Sidebar hidden for now */}
+            {/* <Sidebar /> */}
+            <main className="app-main">
+              {children}
+            </main>
+          </div>
         </div>
       </body>
     </html>

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { rateLossItems } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -23,9 +22,7 @@ export default function RateLossPage() {
   });
 
   return (
-    <>
-      <AppHeader pageTitle="Rate Loss" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Rate Loss</h2>
           <p className="page-subtitle">Lost production capacity by category — Shift 1 · Line A</p>
@@ -142,6 +139,5 @@ export default function RateLossPage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

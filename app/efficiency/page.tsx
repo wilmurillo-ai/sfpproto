@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { efficiencyTrend } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -39,9 +38,7 @@ export default function EfficiencyPage() {
     : '';
 
   return (
-    <>
-      <AppHeader pageTitle="Efficiency" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Efficiency</h2>
           <p className="page-subtitle">Hourly OEE efficiency vs 85% target</p>
@@ -165,6 +162,5 @@ export default function EfficiencyPage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

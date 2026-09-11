@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { scheduleBlocks } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -15,9 +14,7 @@ const hours = Array.from({ length: SHIFT_HOURS }, (_, i) => SHIFT_START + i);
 
 export default function SchedulePage() {
   return (
-    <>
-      <AppHeader pageTitle="Schedule" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Production Schedule</h2>
           <p className="page-subtitle">Shift 1 · 06:00 – 18:00 · Line A</p>
@@ -98,6 +95,5 @@ export default function SchedulePage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

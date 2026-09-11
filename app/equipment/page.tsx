@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { equipmentList } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -20,9 +19,7 @@ export default function EquipmentPage() {
   const avgOEE  = Math.round(equipmentList.filter(e => e.oee > 0).reduce((s, e) => s + e.oee, 0) / equipmentList.filter(e => e.oee > 0).length);
 
   return (
-    <>
-      <AppHeader pageTitle="Equipment" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Equipment Status</h2>
           <p className="page-subtitle">Real-time OEE, uptime, and fault tracking per machine</p>
@@ -125,6 +122,5 @@ export default function EquipmentPage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

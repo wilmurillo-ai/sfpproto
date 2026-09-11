@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { downtimeEvents } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -12,9 +11,7 @@ const avgDowntime   = Math.round(totalDowntime / downtimeEvents.length);
 
 export default function DowntimesPage() {
   return (
-    <>
-      <AppHeader pageTitle="Downtimes" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Downtime Log</h2>
           <p className="page-subtitle">All recorded stoppages for Shift 1 · Line A</p>
@@ -123,6 +120,5 @@ export default function DowntimesPage() {
           </table>
         </div>
       </div>
-    </>
   );
 }

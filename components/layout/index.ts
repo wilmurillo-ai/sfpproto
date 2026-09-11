@@ -1,3 +1,3 @@
-// Layout components — structural shell components.
-// Import individual components here as they are built.
-// Example: export { default as PageShell } from './PageShell';
+export { default as AppHeader } from '../AppHeader';
+export type { AppHeaderProps } from '../AppHeader';
+export { default as Sidebar } from '../Sidebar';

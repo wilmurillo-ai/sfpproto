@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import AppHeader from '@/components/AppHeader';
 import { summaryRows } from '@/lib/dummyData';
 
 export const metadata: Metadata = {
@@ -13,9 +12,7 @@ export default function SummaryPage() {
   const totalAtt     = Math.round((totalActual / totalPlanned) * 1000) / 10;
 
   return (
-    <>
-      <AppHeader pageTitle="Summary" />
-      <div className="page-content">
+    <div className="page-content">
         <div className="page-header">
           <h2 className="page-title">Production Summary</h2>
           <p className="page-subtitle">Shift 1 · Line A — all SKUs</p>
@@ -90,6 +87,5 @@ export default function SummaryPage() {
           </table>
         </div>
       </div>
-    </>
   );
 }
