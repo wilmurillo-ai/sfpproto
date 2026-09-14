@@ -12,7 +12,9 @@ export type CandybarStatus =
   | 'planned-stop'
   | 'hidden'
   | 'first-fault'
-  | 'not-running';
+  | 'not-running'
+  | 'blocked'
+  | 'starved';
 
 export type CandybarSize = 'small' | 'large';
 export type CandybarTimeframe = '1hr' | '4hr' | 'shift' | '24hr';
@@ -798,6 +800,9 @@ export default function Candybar({
                 {displayedSegment.status === 'planned-dt' && <Icon name="build" size="small" />}
                 {displayedSegment.status === 'hidden' && <Icon name="visibility_off" size="small" />}
                 {displayedSegment.status === 'not-running' && <Icon name="hourglass_empty" size="small" />}
+                {(displayedSegment.status === 'blocked' || displayedSegment.status === 'starved') && (
+                  <Icon name="warning" size="small" />
+                )}
                 <span className="candybar-popover-badge-text">
                   {displayedSegment.status === 'running' && 'RUNNING'}
                   {displayedSegment.status === 'slow-running' && 'SLOW RUNNING'}
@@ -808,6 +813,8 @@ export default function Candybar({
                   {displayedSegment.status === 'planned-dt' && 'PLANNED DOWNTIME'}
                   {displayedSegment.status === 'hidden' && 'INACTIVE'}
                   {displayedSegment.status === 'not-running' && 'NOT RUNNING'}
+                  {displayedSegment.status === 'blocked' && 'BLOCKED'}
+                  {displayedSegment.status === 'starved' && 'STARVED'}
                 </span>
               </div>
 

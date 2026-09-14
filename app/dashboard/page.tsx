@@ -7,6 +7,7 @@ import {
   KPICard,
   SidebarEquipment,
   ProductionExecution,
+  EquipmentMonitor,
 } from '@/components';
 import type { CandybarTimeframe } from '@/components/shared/Candybar';
 import type { ProductionOrderTab } from '@/components/shared/ProductionExecution';
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const [selectedEquipment, setSelectedEquipment] = useState<string>('line-main');
   const [orderTab, setOrderTab] = useState<ProductionOrderTab>('processing');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isEquipmentMonitorOpen, setIsEquipmentMonitorOpen] = useState(false);
 
   // Derived current equipment data and timeframe-sensitive segments
   const currentEquipment = getEquipmentData(selectedEquipment);
@@ -57,7 +59,7 @@ export default function DashboardPage() {
             state="expanded"
             selectedId={selectedEquipment}
             onSelectEquipment={(item) => setSelectedEquipment(item.id)}
-            onMonitorClick={() => console.log('Open Equipment Monitor')}
+            onMonitorClick={() => setIsEquipmentMonitorOpen(true)}
           />
         </div>
 
@@ -89,7 +91,7 @@ export default function DashboardPage() {
                     setIsDrawerOpen(false);
                   }}
                   onMonitorClick={() => {
-                    console.log('Open Equipment Monitor');
+                    setIsEquipmentMonitorOpen(true);
                     setIsDrawerOpen(false);
                   }}
                 />
@@ -254,6 +256,13 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Equipment Monitor Fullscreen Modal Window */}
+      <EquipmentMonitor
+        isOpen={isEquipmentMonitorOpen}
+        onClose={() => setIsEquipmentMonitorOpen(false)}
+        lineName={currentEquipment.name}
+      />
     </div>
   );
 }

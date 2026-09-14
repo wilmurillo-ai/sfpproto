@@ -10,3 +10,7 @@ export { default as SidebarEquipment } from './SidebarEquipment';
 export * from './SidebarEquipment';
 export { default as ProductionExecution } from './ProductionExecution';
 export * from './ProductionExecution';
+export { default as ModalWindow, modalWindow } from './ModalWindow';
+export * from './ModalWindow';
+export { default as EquipmentMonitor } from './EquipmentMonitor';
+export * from './EquipmentMonitor';
