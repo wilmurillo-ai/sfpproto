@@ -1,3 +1,6 @@
 // Shared composite components — domain-specific combinations of primitives.
 // Import individual components here as they are built.
-// Example: export { default as KpiTile } from './KpiTile';
+export { default as Candybar } from './Candybar';
+export * from './Candybar';
+export { default as KPICard } from './KPICard';
+export * from './KPICard';

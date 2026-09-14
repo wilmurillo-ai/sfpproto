@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Candybar, KPICard } from '@/components';
 import {
   dashboardKPIs,
   scheduleBlocks,
@@ -48,75 +49,124 @@ export default function DashboardPage() {
         <h2 className="page-title">Line Dashboard</h2>
         <p className="page-subtitle">Real-time KPIs, schedule, and line status overview</p>
       </div>
-        {/* KPI Tiles */}
-        <div className="stat-grid">
-          {dashboardKPIs.map((kpi) => (
-            <div className="stat-tile" key={kpi.id} id={`kpi-${kpi.id}`}>
-              <span className="stat-label">{kpi.label}</span>
-              <div className="flex items-center gap-8">
-                <span className="stat-value">
-                  {kpi.value}
-                  <span className="stat-unit"> {kpi.unit}</span>
-                </span>
-              </div>
-              <span className={`stat-delta ${kpi.trend}`}>{kpi.delta}</span>
-            </div>
-          ))}
-        </div>
+
+      {/* KPI Cards Grid */}
+      <div className="kpi-cards-grid mb-24">
+        <KPICard
+          id="kpi-efficiency"
+          title="Net Efficiency"
+          value={84}
+          unit="%"
+          size="Regular"
+          type="Simple"
+          delta="Positive"
+          clickable={true}
+          href="/efficiency"
+          targetDelta="0.2% vs Target"
+          secondaryDelta="+2.4% vs last hr"
+        />
+
+        <KPICard
+          id="kpi-attainment"
+          title="Attainment"
+          value={91}
+          unit="%"
+          size="Regular"
+          type="Simple"
+          delta="Positive"
+          clickable={true}
+          href="/attainment"
+          targetDelta="4.3% vs Target"
+          secondaryDelta="+1.8% vs last shift"
+        />
+
+        <KPICard
+          id="kpi-downtime"
+          title="Downtime"
+          value={16}
+          unit="%"
+          size="Regular"
+          type="Compound"
+          delta="Negative"
+          clickable={true}
+          href="/downtimes"
+          targetDelta="2% vs Target"
+          secondaryDelta="+2.4% vs. last hr"
+          subMetrics={[
+            { value: 6, label: 'Major Events' },
+            { value: '2.17', unit: 'min', label: 'MTBF' },
+            { value: '1.55', unit: 'min', label: 'MTTR' },
+          ]}
+        />
+
+        <KPICard
+          id="kpi-rate"
+          title="Rate (units/h)"
+          value={312}
+          unit=" u/h"
+          size="Regular"
+          type="Simple"
+          delta="Positive"
+          clickable={true}
+          href="/rateloss"
+          targetDelta="Normal Pace"
+          secondaryDelta="0.0% vs target"
+        />
+
+        <KPICard
+          id="kpi-output"
+          title="Output"
+          value="2,480"
+          unit=" pcs"
+          size="Regular"
+          type="Compound"
+          delta="Positive"
+          clickable={true}
+          href="/summary"
+          targetDelta="5.2% vs Plan"
+          secondaryDelta="+120 vs last hr"
+          subMetrics={[
+            { value: '2,600', unit: 'pcs', label: 'Target' },
+            { value: '98.6', unit: '%', label: 'Yield' },
+            { value: '2,445', unit: 'pcs', label: 'Good' },
+          ]}
+        />
+
+        <KPICard
+          id="kpi-waste"
+          title="Waste"
+          value={1.4}
+          unit="%"
+          size="Regular"
+          type="Simple"
+          delta="Positive"
+          clickable={true}
+          href="/waste"
+          targetDelta="-0.3% vs Target"
+          secondaryDelta="-0.5% vs yesterday"
+        />
+      </div>
 
         {/* Main Grid */}
         <div className="grid-2-1 mb-20">
-          {/* Schedule Bar */}
+          {/* Line Performance Candybar */}
           <div className="card">
             <div className="card-header">
               <div className="card-title">
                 <div className="card-title-bar" />
-                Schedule — Today
+                Line Performance
               </div>
-              <span className="badge badge-blue">Shift 1 · 06:00–18:00</span>
+              <span className="badge badge-blue">Shift 1 · Active</span>
             </div>
 
-            {/* Time axis */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              {Array.from({ length: SHIFT_HOURS + 1 }, (_, i) => (
-                <span key={i} style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', width: 0, textAlign: 'center' }}>
-                  {String(SHIFT_START + i).padStart(2, '0')}h
-                </span>
-              ))}
-            </div>
-
-            <div className="schedule-timeline">
-              {scheduleBlocks.map((block) => {
-                const left = ((block.startHour - SHIFT_START) / SHIFT_HOURS) * 100;
-                const width = ((block.endHour - block.startHour) / SHIFT_HOURS) * 100;
-                return (
-                  <div
-                    key={block.id}
-                    className={`schedule-block ${block.status}`}
-                    style={{ width: `${width}%`, flexShrink: 0 }}
-                    title={`${block.label} (${block.startHour}h – ${block.endHour}h)`}
-                  >
-                    {width > 6 ? block.label : ''}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div className="flex gap-16" style={{ marginTop: 12 }}>
-              {[
-                { label: 'Running',    cls: 'running'    },
-                { label: 'Planned',    cls: 'planned'    },
-                { label: 'Changeover', cls: 'changeover' },
-                { label: 'Downtime',   cls: 'downtime'   },
-                { label: 'Idle',       cls: 'idle'       },
-              ].map(({ label, cls }) => (
-                <div key={cls} className="flex items-center gap-4">
-                  <div className={`schedule-block ${cls}`} style={{ width: 12, height: 12, borderRadius: 3, flexShrink: 0 }} />
-                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>{label}</span>
-                </div>
-              ))}
-            </div>
+            <Candybar
+              size="large"
+              initialTimeframe="shift"
+              showTimeframeSelector={true}
+              showSizeToggle={true}
+              showLegend={true}
+              showNowNeedle={true}
+            />
           </div>
 
           {/* Gauges */}
