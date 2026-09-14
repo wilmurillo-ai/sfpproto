@@ -12,6 +12,7 @@ import type { CandybarTimeframe } from '@/components/shared/Candybar';
 import type { ProductionOrderTab } from '@/components/shared/ProductionExecution';
 import { Icon } from '@/components/ui';
 import { useBreakpoint } from '@/lib/breakpoints';
+import { getEquipmentData, getEquipmentCandybarSegments } from '@/lib/equipmentData';
 
 export default function DashboardPage() {
   const { isTablet, isHydrated } = useBreakpoint();
@@ -21,6 +22,10 @@ export default function DashboardPage() {
   const [selectedEquipment, setSelectedEquipment] = useState<string>('line-main');
   const [orderTab, setOrderTab] = useState<ProductionOrderTab>('processing');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Derived current equipment data and timeframe-sensitive segments
+  const currentEquipment = getEquipmentData(selectedEquipment);
+  const currentSegments = getEquipmentCandybarSegments(selectedEquipment, timeframe);
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -106,13 +111,15 @@ export default function DashboardPage() {
                 <div className="dashboard-machine-icon">
                   <Icon name="precision_manufacturing" size="large" />
                 </div>
-                <h2 className="dashboard-line-title">CAN G4 Line</h2>
+                <h2 className="dashboard-line-title">{currentEquipment.headerTitle}</h2>
               </div>
 
               {/* Tablet Collapsed Pill Trigger */}
               <div className="show-on-tablet">
                 <SidebarEquipment
                   state="collapsed"
+                  lineName={currentEquipment.name}
+                  lineStatus={currentEquipment.status}
                   onToggleState={() => setIsDrawerOpen(true)}
                   allowManualToggle={true}
                 />
@@ -140,69 +147,89 @@ export default function DashboardPage() {
             <KPICard
               id="kpi-efficiency"
               title="Net Efficiency"
-              value={92}
+              value={currentEquipment.kpis.efficiency.value}
               unit="%"
               size="Regular"
               type="Simple"
-              delta="Positive"
+              delta={currentEquipment.kpis.efficiency.delta}
               clickable={true}
               href="/efficiency"
-              targetDelta="2% vs Target"
-              targetDeltaType="positive"
-              secondaryDelta="+2.4% vs last hr"
+              targetDelta={currentEquipment.kpis.efficiency.targetDelta}
+              targetDeltaType={
+                currentEquipment.kpis.efficiency.delta === 'Positive'
+                  ? 'positive'
+                  : currentEquipment.kpis.efficiency.delta === 'Negative'
+                  ? 'negative'
+                  : 'neutral'
+              }
+              secondaryDelta={currentEquipment.kpis.efficiency.secondaryDelta}
             />
 
             {/* 2. Waste */}
             <KPICard
               id="kpi-waste"
               title="Waste"
-              value="0.39"
+              value={currentEquipment.kpis.waste.value}
               unit="%"
               size="Regular"
               type="Simple"
-              delta="Positive"
+              delta={currentEquipment.kpis.waste.delta}
               clickable={true}
               href="/waste"
-              targetDelta="1.7% vs Target"
-              targetDeltaType="positive"
-              secondaryDelta="+0.3% vs last hr"
+              targetDelta={currentEquipment.kpis.waste.targetDelta}
+              targetDeltaType={
+                currentEquipment.kpis.waste.delta === 'Positive'
+                  ? 'positive'
+                  : currentEquipment.kpis.waste.delta === 'Negative'
+                  ? 'negative'
+                  : 'neutral'
+              }
+              secondaryDelta={currentEquipment.kpis.waste.secondaryDelta}
             />
 
             {/* 3. Rate Loss */}
             <KPICard
               id="kpi-rate"
               title="Rate Loss"
-              value={12}
+              value={currentEquipment.kpis.rateLoss.value}
               unit="%"
               size="Regular"
               type="Simple"
-              delta="Positive"
+              delta={currentEquipment.kpis.rateLoss.delta}
               clickable={true}
               href="/rateloss"
-              targetDelta="3% vs Target"
-              targetDeltaType="positive"
-              secondaryDelta="-2.4% vs last hr"
+              targetDelta={currentEquipment.kpis.rateLoss.targetDelta}
+              targetDeltaType={
+                currentEquipment.kpis.rateLoss.delta === 'Positive'
+                  ? 'positive'
+                  : currentEquipment.kpis.rateLoss.delta === 'Negative'
+                  ? 'negative'
+                  : 'neutral'
+              }
+              secondaryDelta={currentEquipment.kpis.rateLoss.secondaryDelta}
             />
 
             {/* 4. Downtime (Compound Card) */}
             <KPICard
               id="kpi-downtime"
               title="Downtime"
-              value={16}
+              value={currentEquipment.kpis.downtime.value}
               unit="%"
               size="Regular"
               type="Compound"
-              delta="Negative"
+              delta={currentEquipment.kpis.downtime.delta}
               clickable={true}
               href="/downtimes"
-              targetDelta="2% vs Target"
-              targetDeltaType="positive"
-              secondaryDelta="+2.4% vs last hr"
-              subMetrics={[
-                { value: 6, label: 'Major Events' },
-                { value: '2.17', unit: 'min', label: 'MTBF' },
-                { value: '1.55', unit: 'min', label: 'MTTR' },
-              ]}
+              targetDelta={currentEquipment.kpis.downtime.targetDelta}
+              targetDeltaType={
+                currentEquipment.kpis.downtime.delta === 'Positive'
+                  ? 'positive'
+                  : currentEquipment.kpis.downtime.delta === 'Negative'
+                  ? 'negative'
+                  : 'neutral'
+              }
+              secondaryDelta={currentEquipment.kpis.downtime.secondaryDelta}
+              subMetrics={currentEquipment.kpis.downtime.subMetrics}
             />
           </div>
 
@@ -216,6 +243,7 @@ export default function DashboardPage() {
               showSizeToggle={false}
               showLegend={true}
               showNowNeedle={true}
+              segments={currentSegments}
             />
           </div>
 

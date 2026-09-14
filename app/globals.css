@@ -1576,6 +1576,13 @@ img, svg { display: block; }
   background: var(--color-background-layer-02, #262626);
 }
 
+.candybar-segment.status-not-running {
+  background: #202020;
+  background-image: repeating-linear-gradient(45deg, #202020, #202020 6px, #282828 6px, #282828 12px);
+  border-top: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+}
+
 .candybar-segment.status-first-fault,
 .candybar-segment.is-first-fault {
   background: #8b1d00;
@@ -1731,6 +1738,11 @@ img, svg { display: block; }
 .candybar-popover-badge.badge-first-fault {
   background: rgba(193, 44, 1, 0.35);
   color: #fe7c5f;
+}
+
+.candybar-popover-badge.badge-not-running {
+  background: rgba(100, 100, 100, 0.25);
+  color: #a2a2a2;
 }
 
 .candybar-popover-tag {
@@ -2755,6 +2767,7 @@ img, svg { display: block; }
   transition: all 0.15s ease;
   background: transparent;
   outline: none;
+  border-left: 4px solid transparent;
 }
 
 .sidebar-equipment-item:hover {
@@ -2762,24 +2775,36 @@ img, svg { display: block; }
 }
 
 .sidebar-equipment-item.is-selected {
-  background: rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--color-neutrals-blue-high, #0662c4);
+  background: rgba(6, 98, 196, 0.12);
+  border-radius: 12px;
+}
+
+.sidebar-equipment-item.is-selected .sidebar-equipment-item-title {
+  color: var(--color-text-primary, #ffffff);
+  font-weight: 500;
 }
 
 /* Primary Main Line Item (CAN G4 Header) */
 .sidebar-equipment-item.is-main-line {
   padding: 16px 4px 16px 12px;
   border-radius: 12px;
-  border-left: 4px solid var(--color-neutrals-blue-high, #0662c4);
-  background: rgba(6, 98, 196, 0.12);
+  border-left: 4px solid transparent;
+  background: transparent;
   margin-bottom: 4px;
 }
 
 .sidebar-equipment-item.is-main-line:hover {
-  background: rgba(6, 98, 196, 0.18);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-equipment-item.is-main-line.is-selected {
-  background: rgba(6, 98, 196, 0.22);
+  border-left: 4px solid var(--color-neutrals-blue-high, #0662c4);
+  background: rgba(6, 98, 196, 0.12);
+}
+
+.sidebar-equipment-item.is-main-line.is-selected:hover {
+  background: rgba(6, 98, 196, 0.18);
 }
 
 .sidebar-equipment-item-title {
@@ -2857,11 +2882,27 @@ img, svg { display: block; }
   color: #a2a2a2;
 }
 
-.sidebar-equipment-tag.is-down {
+.sidebar-equipment-tag.is-down,
+.sidebar-equipment-tag.is-faulted {
   color: #f87171;
 }
-.sidebar-equipment-tag.is-down .sidebar-equipment-tag-icon {
+.sidebar-equipment-tag.is-down .sidebar-equipment-tag-icon,
+.sidebar-equipment-tag.is-faulted .sidebar-equipment-tag-icon {
   color: #f87171;
+}
+
+.sidebar-equipment-tag.is-blocked {
+  color: #f6c445;
+}
+.sidebar-equipment-tag.is-blocked .sidebar-equipment-tag-icon {
+  color: #f6c445;
+}
+
+.sidebar-equipment-tag.is-not-running {
+  color: #8c8c8c;
+}
+.sidebar-equipment-tag.is-not-running .sidebar-equipment-tag-icon {
+  color: #8c8c8c;
 }
 
 /* Chevron */

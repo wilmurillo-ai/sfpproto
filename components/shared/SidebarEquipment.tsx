@@ -3,7 +3,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Icon } from '@/components/ui';
 
-export type EquipmentStatus = 'Running' | 'Slow Run' | 'Available' | 'Down';
+export type EquipmentStatus =
+  | 'Running'
+  | 'Slow Run'
+  | 'Available'
+  | 'Down'
+  | 'Faulted'
+  | 'Blocked'
+  | 'Not Running';
 
 export interface EquipmentItem {
   id: string;
@@ -53,33 +60,18 @@ export const DEFAULT_EQUIPMENT_GROUPS: EquipmentGroup[] = [
     items: [
       { id: 'depalletizer', name: 'Depalletizer', status: 'Running' },
       { id: 'empty-can-conveyor', name: 'Empty can conveyor', status: 'Running' },
-      { id: 'seamer', name: 'Seamer', status: 'Running' },
-      { id: 'caps-feeder', name: 'Caps feeder', status: 'Slow Run' },
-      { id: 'filler', name: 'Filler', status: 'Running' },
-      { id: 'paesturizer', name: 'Paesturizer', status: 'Slow Run' },
-      { id: 'paesturizer-conveyor', name: 'Paesturizer conveyor', status: 'Running' },
-      { id: 'full-can-conveyor', name: 'Full can conveyor', status: 'Running' },
+      { id: 'filler', name: 'Filler', status: 'Faulted' },
+      { id: 'full-can-conveyor', name: 'Full can conveyor', status: 'Blocked' },
     ],
   },
   {
     id: 'packaging',
     title: 'Packaging',
     items: [
-      { id: 'packer-kister', name: 'Packer KISTER', status: 'Slow Run' },
-      { id: 'packer-vega-1', name: 'Packer Vega 1', status: 'Running' },
-      { id: 'packer-vega-2', name: 'Packer Vega 2', status: 'Available' },
-      { id: 'packer-wr', name: 'Packer WR', status: 'Available' },
-      { id: 'case-conveyor', name: 'Case Conveyor', status: 'Running' },
-    ],
-  },
-  {
-    id: 'palletizing',
-    title: 'Palletizing & End of Line',
-    items: [
-      { id: 'palletizer-1-rocombi', name: 'Palletizer 1 Rocombi', status: 'Running' },
-      { id: 'palletizer-2-pegasus', name: 'Palletizer 2 PEGASUS', status: 'Running' },
-      { id: 'pallet-wrapper-1', name: 'Pallet Wrapper 1', status: 'Running' },
-      { id: 'pallet-wrapper-2', name: 'Pallet Wrapper 2', status: 'Available' },
+      { id: 'packer-kister', name: 'Packer KISTER', status: 'Running' },
+      { id: 'packer-vega-1', name: 'Packer Vega 1', status: 'Not Running' },
+      { id: 'palletizer-1-robocombi', name: 'Palletizer 1 Robocombi', status: 'Not Running' },
+      { id: 'pallet-wrapper-1', name: 'Pallet wrapper 1', status: 'Not Running' },
     ],
   },
 ];
@@ -192,6 +184,27 @@ export default function SidebarEquipment({
           <span className={`sidebar-equipment-tag is-available ${isCompact ? 'is-compact' : ''}`}>
             <Icon name="check_circle" size="small" className="sidebar-equipment-tag-icon" />
             <span className="sidebar-equipment-tag-text">Available</span>
+          </span>
+        );
+      case 'Faulted':
+        return (
+          <span className={`sidebar-equipment-tag is-faulted ${isCompact ? 'is-compact' : ''}`}>
+            <Icon name="warning" size="small" className="sidebar-equipment-tag-icon" />
+            <span className="sidebar-equipment-tag-text">Faulted</span>
+          </span>
+        );
+      case 'Blocked':
+        return (
+          <span className={`sidebar-equipment-tag is-blocked ${isCompact ? 'is-compact' : ''}`}>
+            <Icon name="warning" size="small" className="sidebar-equipment-tag-icon" />
+            <span className="sidebar-equipment-tag-text">Blocked</span>
+          </span>
+        );
+      case 'Not Running':
+        return (
+          <span className={`sidebar-equipment-tag is-not-running ${isCompact ? 'is-compact' : ''}`}>
+            <Icon name="hourglass_empty" size="small" className="sidebar-equipment-tag-icon" />
+            <span className="sidebar-equipment-tag-text">Not Running</span>
           </span>
         );
       case 'Down':

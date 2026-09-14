@@ -11,7 +11,8 @@ export type CandybarStatus =
   | 'planned-dt'
   | 'planned-stop'
   | 'hidden'
-  | 'first-fault';
+  | 'first-fault'
+  | 'not-running';
 
 export type CandybarSize = 'small' | 'large';
 export type CandybarTimeframe = '1hr' | '4hr' | 'shift' | '24hr';
@@ -59,7 +60,7 @@ export interface CandybarProps {
 // Default Mock Data for Timeframes (Derived from Figma specs)
 // -------------------------------------------------------------
 
-const mock1HrSegments: CandybarSegment[] = [
+export const mock1HrSegments: CandybarSegment[] = [
   {
     id: '1h-1',
     status: 'running',
@@ -129,7 +130,7 @@ const mock1HrSegments: CandybarSegment[] = [
   },
 ];
 
-const mock4HrSegments: CandybarSegment[] = [
+export const mock4HrSegments: CandybarSegment[] = [
   {
     id: '4h-1',
     status: 'running',
@@ -240,7 +241,7 @@ const mock4HrSegments: CandybarSegment[] = [
   },
 ];
 
-const mockShiftSegments: CandybarSegment[] = [
+export const mockShiftSegments: CandybarSegment[] = [
   {
     id: 'sh-1',
     status: 'hidden',
@@ -397,7 +398,7 @@ const mockShiftSegments: CandybarSegment[] = [
   },
 ];
 
-const mock24HrSegments: CandybarSegment[] = [
+export const mock24HrSegments: CandybarSegment[] = [
   {
     id: '24h-1',
     status: 'hidden',
@@ -789,18 +790,24 @@ export default function Candybar({
               <div className={`candybar-popover-badge badge-${displayedSegment.status}`}>
                 {displayedSegment.status === 'running' && <Icon name="play_arrow" size="small" />}
                 {displayedSegment.status === 'slow-running' && <Icon name="speed" size="small" />}
-                {(displayedSegment.status === 'stopped' || displayedSegment.status === 'fault') && (
+                {(displayedSegment.status === 'stopped' ||
+                  displayedSegment.status === 'fault' ||
+                  displayedSegment.status === 'first-fault') && (
                   <Icon name="warning" size="small" />
                 )}
                 {displayedSegment.status === 'planned-dt' && <Icon name="build" size="small" />}
                 {displayedSegment.status === 'hidden' && <Icon name="visibility_off" size="small" />}
+                {displayedSegment.status === 'not-running' && <Icon name="hourglass_empty" size="small" />}
                 <span className="candybar-popover-badge-text">
                   {displayedSegment.status === 'running' && 'RUNNING'}
                   {displayedSegment.status === 'slow-running' && 'SLOW RUNNING'}
-                  {(displayedSegment.status === 'stopped' || displayedSegment.status === 'fault') && 'STOPPED'}
+                  {(displayedSegment.status === 'stopped' ||
+                    displayedSegment.status === 'fault' ||
+                    displayedSegment.status === 'first-fault') &&
+                    'STOPPED'}
                   {displayedSegment.status === 'planned-dt' && 'PLANNED DOWNTIME'}
                   {displayedSegment.status === 'hidden' && 'INACTIVE'}
-                  {displayedSegment.status === 'first-fault' && 'FIRST FAULT'}
+                  {displayedSegment.status === 'not-running' && 'NOT RUNNING'}
                 </span>
               </div>
 
