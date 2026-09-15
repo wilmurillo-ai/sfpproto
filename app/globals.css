@@ -3256,13 +3256,24 @@ img, svg { display: block; }
   letter-spacing: -0.01em;
 }
 
-.prod-exec-speed-stats {
+/* Speed stats — now live inside the Processing Order card body, not the header */
+.processing-speed-stats {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-left: 12px;
   font-size: 14px;
   color: var(--color-text-secondary, #b3b3b3);
+  flex-wrap: wrap;
+}
+
+.processing-speed-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.processing-speed-divider {
+  color: var(--color-border-default, #404040);
 }
 
 .speed-label {
@@ -3279,10 +3290,6 @@ img, svg { display: block; }
   color: #7adb74;
   margin-left: 4px;
   font-size: 13px;
-}
-
-.prod-exec-speed-divider {
-  color: var(--color-border-default, #404040);
 }
 
 /* Secondary Tabs */
@@ -3320,6 +3327,187 @@ img, svg { display: block; }
   color: #ffffff;
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================================
+   CIP RUNS TAB VIEW
+   ============================================================ */
+.cip-runs-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.cip-runs-card {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Top row: left (label + id + route) | right (live sensors) */
+.cip-runs-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cip-runs-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cip-active-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #9a9a9a);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cip-id-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #4fa3e0;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  transition: color 0.15s ease;
+}
+
+.cip-id-link:hover {
+  color: #74bef5;
+}
+
+.cip-id-arrow {
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.cip-route {
+  font-size: 14px;
+  color: var(--color-text-secondary, #9a9a9a);
+  margin-top: 2px;
+}
+
+/* Live sensor readings */
+.cip-live-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.cip-live-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cip-live-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-secondary, #9a9a9a);
+  font-size: 20px;
+}
+
+.cip-live-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary, #ffffff);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Bottom row: CTA button | stage + timing (right-aligned) */
+.cip-runs-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cip-view-details-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0662c4;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.cip-view-details-btn:hover {
+  background: #0772d8;
+  transform: translateY(-1px);
+}
+
+.cip-runs-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.cip-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cip-stage-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #9a9a9a);
+}
+
+.cip-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0662c4;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cip-timing-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.cip-timing-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 12px;
+  color: var(--color-text-secondary, #9a9a9a);
+  gap: 1px;
+}
+
+.cip-timing-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #efefef);
+}
+
+.cip-timing-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary, #9a9a9a);
 }
 
 /* Body: Processing Order View */
@@ -3710,8 +3898,8 @@ img, svg { display: block; }
     grid-template-columns: 1fr;
   }
 
-  .prod-exec-speed-stats {
-    margin-left: 0;
+  .processing-speed-stats {
+    flex-wrap: wrap;
   }
 }
 

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui';
 
-export type ProductionOrderTab = 'processing' | 'packaging';
+export type ProductionOrderTab = 'processing' | 'packaging' | 'cip';
 
 export interface ProductionExecutionProps {
   className?: string;
@@ -26,26 +26,13 @@ export default function ProductionExecution({
 
   return (
     <section className={`prod-exec-container ${className}`.trim()}>
-      {/* Top Header Row with Title, Speeds, and Secondary Tabs */}
+      {/* Top Header Row with Title and Secondary Tabs */}
       <div className="prod-exec-header">
         <div className="prod-exec-header-left">
           <div className="prod-exec-icon">
             <Icon name="precision_manufacturing" size="medium" />
           </div>
           <h3 className="prod-exec-title">Production Execution</h3>
-
-          <div className="prod-exec-speed-stats">
-            <span className="prod-exec-speed-item">
-              <span className="speed-label">Current Speed:</span>
-              <strong className="speed-val">1,700 cans/hr</strong>
-              <span className="speed-delta is-positive">(+30 cans/hr)</span>
-            </span>
-            <span className="prod-exec-speed-divider">|</span>
-            <span className="prod-exec-speed-item">
-              <span className="speed-label">Setpoint Speed:</span>
-              <strong className="speed-val">1,800 cans/hr</strong>
-            </span>
-          </div>
         </div>
 
         {/* Secondary Tabs */}
@@ -68,6 +55,15 @@ export default function ProductionExecution({
           >
             Packaging Orders (2)
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'cip'}
+            className={`prod-exec-tab-btn ${activeTab === 'cip' ? 'active' : ''}`}
+            onClick={() => handleTabClick('cip')}
+          >
+            CIP Runs
+          </button>
         </div>
       </div>
 
@@ -88,6 +84,20 @@ export default function ProductionExecution({
                 <span className="processing-order-name">21-PEPSI MAX-330ML LATAS SLEEK</span>
                 <Icon name="north_east" size="small" className="processing-order-arrow" />
               </Link>
+            </div>
+
+            {/* Speed Stats — moved here from the header per Figma */}
+            <div className="processing-speed-stats">
+              <span className="processing-speed-item">
+                <span className="speed-label">Current Speed:</span>
+                <strong className="speed-val">1,700 cans/hr</strong>
+                <span className="speed-delta is-positive">(+30 cans/hr)</span>
+              </span>
+              <span className="processing-speed-divider">|</span>
+              <span className="processing-speed-item">
+                <span className="speed-label">Setpoint Speed:</span>
+                <strong className="speed-val">1,800 cans/hr</strong>
+              </span>
             </div>
 
             {/* Progress Count & Running Ahead Status */}
@@ -267,6 +277,67 @@ export default function ProductionExecution({
                 <span className="pkg-timing-remaining">
                   Est. Remaining Time: <strong>1hr 12min</strong> (04/11/25 12:02)
                 </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          CIP RUNS TAB VIEW
+          ===================================================================== */}
+      {activeTab === 'cip' && (
+        <div className="prod-exec-body cip-runs-view">
+          <div className="cip-runs-card">
+            {/* Top row: CIP ID + live sensor readings */}
+            <div className="cip-runs-top-row">
+              <div className="cip-runs-left">
+                <span className="cip-active-label">Active CIP</span>
+                <Link href="/cip" className="cip-id-link" title="View CIP details">
+                  CIP-123456790
+                  <Icon name="north_east" size="small" className="cip-id-arrow" />
+                </Link>
+                <span className="cip-route">Mirinda → KAS Naranja</span>
+              </div>
+
+              <div className="cip-live-stats">
+                <div className="cip-live-stat">
+                  <span className="cip-live-icon">
+                    <Icon name="device_thermostat" size="small" />
+                  </span>
+                  <span className="cip-live-value">82°C</span>
+                </div>
+                <div className="cip-live-stat">
+                  <span className="cip-live-icon">
+                    <Icon name="shutter_speed" size="small" />
+                  </span>
+                  <span className="cip-live-value">123 L/m</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom row: stage + timing + CTA */}
+            <div className="cip-runs-bottom-row">
+              <Link href="/cip" className="cip-view-details-btn">
+                View Details
+                <Icon name="arrow_forward" size="small" />
+              </Link>
+
+              <div className="cip-runs-meta">
+                <div className="cip-stage-row">
+                  <span className="cip-stage-label">Current Stage:</span>
+                  <span className="cip-stage-badge">3</span>
+                </div>
+                <div className="cip-timing-row">
+                  <span className="cip-timing-item">
+                    Started
+                    <strong className="cip-timing-val">1:40pm</strong>
+                  </span>
+                  <span className="cip-timing-item">
+                    Est Completion
+                    <strong className="cip-timing-val">2:20pm <span className="cip-timing-sub">(20 min)</span></strong>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
