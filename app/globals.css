@@ -451,7 +451,8 @@ img, svg { display: block; }
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: var(--color-background-default);
 }
 
@@ -4620,5 +4621,1335 @@ img, svg { display: block; }
   width: 2px;
   background: #129f14;
   box-shadow: 0 0 8px rgba(18, 159, 20, 0.7);
+}
+
+/* ==========================================================================
+   CIP DASHBOARD, TANK KPI CARDS, ACCORDIONS & DETAIL MODAL
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Tank KPI Card Component (.tank-kpi-card) - Refactored with 24px vertical tank column
+   -------------------------------------------------------------------------- */
+.tank-kpi-card {
+  position: relative;
+  background: var(--color-background-layer-02, #262626);
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: var(--semantic-corner-radius-container-large, 8px);
+  padding: 0;
+  min-height: 140px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.tank-kpi-card:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* 24px Vertical Tank Gauge Column - flush left edge, full card height */
+.tank-vertical-column {
+  width: 24px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.tank-vertical-track {
+  width: 24px;
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.tank-vertical-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-radius: 0;
+  transition: height 0.4s ease;
+}
+
+/* Variant color assignments for vertical tank fill and accents */
+.tank-kpi-card.variant-green .tank-vertical-fill {
+  background: var(--color-neutrals-green-high, #027c06);
+}
+
+.tank-kpi-card.variant-yellow .tank-vertical-fill {
+  background: var(--yellow-400, #c79b19);
+}
+
+.tank-kpi-card.variant-red .tank-vertical-fill {
+  background: var(--red-400, #fa6443);
+}
+
+/* Tank Information Body */
+.tank-kpi-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 20px;
+}
+
+.tank-kpi-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tank-kpi-ident-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tank-kpi-tank-id {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-secondary, #dadada);
+  opacity: 0.85;
+}
+
+.tank-kpi-title-level {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tank-kpi-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+  color: var(--color-text-primary, #efefef);
+  margin: 0;
+}
+
+.tank-kpi-level-percent {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 26px;
+  color: var(--color-text-primary, #efefef);
+}
+
+.tank-kpi-card.variant-red .tank-kpi-level-percent {
+  color: var(--red-400, #fa6443);
+}
+
+.tank-kpi-temp-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tank-kpi-temp-number {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 26px;
+  color: var(--color-text-high-contrast, #ffffff);
+}
+
+.tank-kpi-thermostat-icon {
+  font-size: 22px;
+  color: #129f14;
+}
+
+.tank-kpi-card.variant-yellow .tank-kpi-thermostat-icon {
+  color: var(--yellow-400, #c79b19);
+}
+
+.tank-kpi-card.variant-red .tank-kpi-thermostat-icon {
+  color: var(--red-400, #fa6443);
+}
+
+.tank-kpi-alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(250, 100, 67, 0.15);
+  border: 1px solid rgba(250, 100, 67, 0.3);
+  color: var(--red-400, #fa6443);
+  font-size: 12px;
+  font-weight: 500;
+  align-self: flex-start;
+}
+
+.tank-kpi-alert-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.tank-kpi-row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  width: 100%;
+}
+
+.tank-kpi-cond-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tank-kpi-cond-val {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: #86efac;
+}
+
+.tank-kpi-card.variant-yellow .tank-kpi-cond-val {
+  color: #fde047;
+}
+
+.tank-kpi-card.variant-red .tank-kpi-cond-val {
+  color: var(--red-400, #fa6443);
+}
+
+.tank-kpi-cond-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-text-tertiary, #a2a2a2);
+}
+
+.tank-kpi-limits-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.tank-kpi-limit-item {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary, #dadada);
+}
+
+/* --------------------------------------------------------------------------
+   Dedicated CIP Dashboard Page Root & Header
+   -------------------------------------------------------------------------- */
+.cip-dashboard-page-root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 32px 48px;
+  max-width: 1540px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cip-page-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+.cip-page-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  color: var(--color-text-primary, #efefef);
+  margin: 0;
+}
+
+.cip-header-center-switcher {
+  display: flex;
+  justify-content: center;
+}
+
+.cip-view-pill-bar {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-background-utility-low-contrast, #262626);
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 9999px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.cip-view-pill-btn {
+  padding: 6px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--primitives-gray-500, #838383);
+  font-family: var(--typography-font-family-paragraph, 'Inter', sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cip-view-pill-btn:hover {
+  color: var(--color-text-primary, #efefef);
+}
+
+.cip-view-pill-btn.active {
+  background: var(--color-neutrals-blue-low, #002b5e);
+  color: #ffffff;
+}
+
+.cip-header-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #dadada);
+}
+
+.cip-meta-shift {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cip-meta-dot {
+  color: var(--color-text-tertiary, #a2a2a2);
+}
+
+.cip-meta-updated {
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------------------------
+   Collapsible Tank Status KPI Strip
+   -------------------------------------------------------------------------- */
+.cip-tank-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.cip-tank-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cip-section-heading {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 30px;
+  color: var(--color-text-primary, #efefef);
+  margin: 0;
+}
+
+.cip-tank-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.cip-collapse-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.cip-collapse-line {
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border-default, #404040);
+}
+
+.cip-collapse-btn {
+  background: var(--semantic-background-utility-low-contrast, #2d2d2d);
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  color: #efefef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cip-collapse-btn:hover {
+  background: #3d3d3d;
+  border-color: #555555;
+}
+
+/* --------------------------------------------------------------------------
+   CIP Monitoring Section & Accordions
+   -------------------------------------------------------------------------- */
+.cip-monitoring-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.cip-monitoring-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.cip-pending-requests-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-feedback-info-default, #38bdf8);
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.cip-pending-requests-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.cip-accordions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Accordion Card */
+.cip-accordion-card {
+  background: var(--color-background-layer-02, #262626);
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.cip-accordion-card.is-open {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Accordion Header - matches Figma: left=title+badge, right=recipe info, chevron far right */
+.cip-accordion-header {
+  display: grid;
+  /* left: title section, right: recipe info + chevron */
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 0 0 0 24px;
+  min-height: 64px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.cip-accordion-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Left group: title + status badge */
+.cip-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.cip-accordion-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary, #efefef);
+  margin: 0;
+}
+
+/* Right group: recipe label + value + chevron */
+.cip-header-right {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-height: 64px;
+}
+
+.cip-header-recipe-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 20px;
+}
+
+.cip-recipe-label {
+  font-size: 12px;
+  color: var(--color-text-tertiary, #a2a2a2);
+  font-weight: 500;
+}
+
+.cip-recipe-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+/* Circular chevron button - rightmost */
+.cip-accordion-chevron-btn {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border-default, #404040);
+  width: 56px;
+  color: #efefef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  align-self: stretch;
+  transition: background 0.15s;
+}
+
+.cip-accordion-chevron-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Status badges */
+.cip-line-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cip-line-status-badge.status-running {
+  background: rgba(18, 159, 20, 0.18);
+  border: 1px solid rgba(18, 159, 20, 0.4);
+  color: #4ade80;
+}
+
+.cip-line-status-badge.status-attention {
+  background: rgba(250, 100, 67, 0.15);
+  border: 1px solid rgba(250, 100, 67, 0.35);
+  color: var(--red-400, #fa6443);
+}
+
+.cip-line-status-badge.status-stopped {
+  background: rgba(156, 163, 175, 0.12);
+  border: 1px solid rgba(156, 163, 175, 0.3);
+  color: #9ca3af;
+}
+
+.cip-status-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.cip-play-icon {
+  font-size: 15px;
+}
+
+/* Legacy - keep for collapsed summary text */
+.cip-recipe-target-tag {
+  font-size: 15px;
+  color: var(--color-text-secondary, #dadada);
+}
+
+.cip-header-collapsed-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: var(--color-text-secondary, #dadada);
+}
+
+.cip-summary-time {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-summary-pct {
+  color: #38bdf8;
+}
+
+/* Accordion Expanded Content */
+.cip-accordion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 24px 24px;
+  border-top: 1px solid var(--color-border-default, #404040);
+  background: var(--color-background-layer-01, #1f1f1f);
+}
+
+/* Active CIP Banner */
+.cip-active-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #0d2812;
+  border: 1px solid #1a5423;
+  border-radius: 8px;
+}
+
+.cip-accordion-card.status-attention .cip-active-banner {
+  background: #361408;
+  border-color: #6d2810;
+}
+
+.cip-accordion-card.status-stopped .cip-active-banner {
+  background: #23262d;
+  border-color: #3e4450;
+}
+
+.cip-banner-code {
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.cip-accordion-card.status-attention .cip-banner-code {
+  color: #fca5a5;
+}
+
+.cip-accordion-card.status-stopped .cip-banner-code {
+  color: #9ca3af;
+}
+
+.cip-banner-transition {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Inner Tabs - inline row with label */
+.cip-inner-tabs-container {
+  background: var(--color-background-layer-02, #262626);
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Row: section label left, tab pills right */
+.cip-inner-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cip-inner-tab-bar-pills {
+  display: flex;
+  gap: 0;
+  background: transparent;
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 9999px;
+  padding: 3px;
+}
+
+.cip-inner-tab-btn {
+  padding: 4px 16px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #a2a2a2);
+  font-family: var(--typography-font-family-paragraph, 'Inter', sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cip-inner-tab-btn:hover {
+  color: #ffffff;
+}
+
+.cip-inner-tab-btn.active {
+  background: #0662c4;
+  color: #ffffff;
+}
+
+.cip-inner-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cip-progress-headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cip-progress-label {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cip-stage-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cip-stage-name {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-stage-running-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(18, 159, 20, 0.15);
+  color: #4ade80;
+}
+
+.cip-progress-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cip-progress-time {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-progress-percent {
+  font-size: 14px;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.cip-progress-track {
+  width: 100%;
+  height: 16px;
+  background: var(--color-background-utility-high-contrast, #4b4b4b);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.cip-progress-fill {
+  height: 100%;
+  background: #0662c4;
+  border-radius: 24px;
+  transition: width 0.4s ease;
+}
+
+.cip-progress-timestamps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--color-text-secondary, #dadada);
+}
+
+.cip-time-item strong {
+  color: #ffffff;
+}
+
+/* Live Telemetry Section inside Accordion */
+.cip-telemetry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cip-telemetry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cip-telemetry-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cip-view-detail-btn {
+  background: transparent;
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: var(--border-radius-action-rounded, 9999px);
+  color: var(--color-text-primary, #efefef);
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  padding: 12px 24px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
+}
+
+.cip-view-detail-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #666666;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.cip-view-detail-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.99);
+}
+
+.cip-telemetry-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cip-telemetry-card {
+  background: var(--color-background-layer-02, #262626);
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cip-tel-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cip-tel-param-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #dadada);
+}
+
+.cip-tel-target-tag {
+  font-size: 12px;
+  color: #dadada;
+  background: #33383f;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.cip-tel-reading {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.cip-tel-val {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-tel-unit {
+  font-size: 14px;
+  color: var(--color-text-secondary, #dadada);
+}
+
+.cip-tel-gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cip-tel-gauge-track {
+  position: relative;
+  height: 8px;
+  background: var(--color-background-utility-high-contrast, #4b4b4b);
+  border-radius: 24px;
+  width: 100%;
+}
+
+.cip-tel-target-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(6, 98, 196, 0.45);
+  border: 1px solid #0662c4;
+  border-radius: 24px;
+}
+
+.cip-tel-current-pin {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  background: #ffffff;
+  border-radius: 2px;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.cip-tel-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-tertiary, #a2a2a2);
+}
+
+/* --------------------------------------------------------------------------
+   CIP Detail Modal Window & Timeline Graph (Figma 28133-104759)
+   -------------------------------------------------------------------------- */
+.cip-detail-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* No extra padding — modal-window-content already provides 32px 40px */
+}
+
+/* Meta info shown in modal header right area */
+.cip-detail-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* Tab bar row inside the modal content (NOT in title bar) */
+.cip-detail-tab-bar-row {
+  display: flex;
+  align-items: center;
+}
+
+.cip-modal-pill-switcher {
+  display: inline-flex;
+  background: #1e2229;
+  border: 1px solid #3e4450;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.cip-modal-pill-btn {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cip-modal-pill-btn.active {
+  background: #0662c4;
+  color: #ffffff;
+}
+
+/* Keep backward compat for any existing references */
+.cip-detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cip-modal-meta-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.cip-modal-header-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.cip-modal-entity-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cip-timeline-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #1a1a1a;
+  border: 1px solid #2d2d2d;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.cip-timeline-axis-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #2d2d2d;
+  padding: 16px 0 8px 0;
+  background: #1f1f1f;
+  position: relative;
+}
+
+.cip-chart-label-spacer {
+  width: 180px;
+  flex-shrink: 0;
+}
+
+.cip-timeline-ticks-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 12px;
+}
+
+.cip-timeline-tick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.cip-tick-label {
+  font-size: 12px;
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.cip-now-axis-indicator {
+  position: absolute;
+  top: -12px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.cip-now-badge {
+  background: var(--yellow-250, #ebcd07);
+  color: #1a1a1a;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.cip-now-needle-stem {
+  width: 2px;
+  height: 14px;
+  background: var(--yellow-250, #ebcd07);
+  margin-top: 2px;
+}
+
+.cip-timeline-phases-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #2d2d2d;
+  padding: 8px 0;
+  background: #1c1c1c;
+}
+
+.cip-phases-row-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #dadada;
+  padding-left: 20px;
+}
+
+.cip-phases-track {
+  flex: 1;
+  display: flex;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  gap: 2px;
+}
+
+.cip-phase-pill {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: opacity 0.15s;
+}
+
+.cip-phase-name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cip-phase-dur {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.cip-now-vertical-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--yellow-250, #ebcd07);
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.cip-metric-charts-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cip-metric-chart-row {
+  display: flex;
+  align-items: stretch;
+  background: #181818;
+  border: none;
+  border-bottom: 1px solid #2d2d2d;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.cip-metric-chart-row:last-child {
+  border-bottom: none;
+}
+
+.cip-metric-info-col {
+  width: 180px;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  border-right: 1px solid #2d2d2d;
+  background: #1c1c1c;
+}
+
+.cip-metric-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.cip-metric-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cip-metric-icon {
+  color: #838383;
+}
+
+.cip-metric-current-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-metric-target-desc {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.cip-metric-svg-wrapper {
+  flex: 1;
+  height: 130px;
+  position: relative;
+  background: #141414;
+}
+
+.cip-chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cip-chart-legend-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 24px;
+  background: #181818;
+  border-top: 1px solid #2d2d2d;
+}
+
+.cip-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #d1d5db;
+}
+
+.cip-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.cip-legend-dash {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed;
+}
+
+.cip-modal-log-tab {
+  background: #16191f;
+  border: 1px solid #2d333b;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cip-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.cip-log-table th {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid #33383f;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.cip-log-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #282c35;
+}
+
+.cip-log-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cip-log-tag.success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.cip-log-tag.active {
+  background: rgba(6, 98, 196, 0.2);
+  color: #38bdf8;
+}
+
+.cip-log-tag.info {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Media Queries
+   -------------------------------------------------------------------------- */
+@media (max-width: 1280px) {
+  .cip-tank-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cip-telemetry-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .cip-dashboard-page-root {
+    padding: 16px 16px 36px;
+  }
+
+  .cip-tank-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cip-telemetry-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cip-page-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cip-chart-label-spacer,
+  .cip-metric-info-col {
+    width: 130px;
+  }
 }
 

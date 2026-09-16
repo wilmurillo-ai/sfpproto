@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui';
 
 export interface AppHeaderProps {
@@ -16,6 +17,7 @@ const DEPARTMENTS = [
   { id: 'BTL', name: 'Bottling' },
   { id: 'SNK', name: 'Snacks' },
   { id: 'PKG', name: 'Packaging' },
+  { id: 'CIP', name: 'Clean-In-Place' },
 ];
 
 const LINES: Record<string, string[]> = {
@@ -23,6 +25,7 @@ const LINES: Record<string, string[]> = {
   BTL: ['B1', 'B2', 'B3'],
   SNK: ['S1', 'S2', 'S3'],
   PKG: ['P1', 'P2'],
+  CIP: ['CIP Line 1', 'CIP Line 2', 'CIP Line 3', 'CIP Line 4'],
 };
 
 export default function AppHeader({
@@ -30,9 +33,12 @@ export default function AppHeader({
   defaultDept = 'CAN',
   defaultLine = 'G4',
 }: AppHeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   // State
-  const [dept, setDept] = useState(defaultDept);
-  const [line, setLine] = useState(defaultLine);
+  const [dept, setDept] = useState(pathname === '/cip' ? 'CIP' : defaultDept);
+  const [line, setLine] = useState(pathname === '/cip' ? 'CIP Line 1' : defaultLine);
   const [deptMenuOpen, setDeptMenuOpen] = useState(false);
   const [lineMenuOpen, setLineMenuOpen] = useState(false);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
@@ -80,6 +86,19 @@ export default function AppHeader({
     const theme = document.documentElement.getAttribute('data-theme') || 'dark';
     setIsDark(theme === 'dark');
   }, []);
+
+  // Sync department with pathname
+  useEffect(() => {
+    if (pathname === '/cip') {
+      setDept('CIP');
+      setLine('CIP Line 1');
+    } else if (pathname === '/dashboard' || pathname === '/') {
+      if (dept === 'CIP') {
+        setDept(defaultDept);
+        setLine(defaultLine);
+      }
+    }
+  }, [pathname, defaultDept, defaultLine]);
 
   const toggleTheme = () => {
     const nextTheme = isDark ? 'light' : 'dark';
@@ -165,8 +184,15 @@ export default function AppHeader({
                     className={`sfp-dropdown-option ${d.id === dept ? 'active' : ''}`}
                     onClick={() => {
                       setDept(d.id);
-                      setLine((LINES[d.id] && LINES[d.id][0]) || 'Line 1');
+                      const nextLine = (LINES[d.id] && LINES[d.id][0]) || 'Line 1';
+                      setLine(nextLine);
                       setDeptMenuOpen(false);
+
+                      if (d.id === 'CIP') {
+                        router.push('/cip');
+                      } else if (pathname === '/cip') {
+                        router.push('/dashboard');
+                      }
                     }}
                   >
                     <span className="sfp-opt-code">{d.id}</span>
