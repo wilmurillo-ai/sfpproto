@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui';
 
 export interface AppHeaderProps {
@@ -16,6 +17,7 @@ const DEPARTMENTS = [
   { id: 'BTL', name: 'Bottling' },
   { id: 'SNK', name: 'Snacks' },
   { id: 'PKG', name: 'Packaging' },
+  { id: 'CIP', name: 'Clean-In-Place' },
 ];
 
 const LINES: Record<string, string[]> = {
@@ -23,6 +25,7 @@ const LINES: Record<string, string[]> = {
   BTL: ['B1', 'B2', 'B3'],
   SNK: ['S1', 'S2', 'S3'],
   PKG: ['P1', 'P2'],
+  CIP: ['G4', 'CIP 1', 'CIP 2', 'CIP 3', 'CIP 4', 'CIP 5'],
 };
 
 export default function AppHeader({
@@ -30,8 +33,17 @@ export default function AppHeader({
   defaultDept = 'CAN',
   defaultLine = 'G4',
 }: AppHeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Sync dept from pathname on mount/route change
+  const getDeptFromPath = () => {
+    if (pathname?.startsWith('/cip')) return 'CIP';
+    return defaultDept;
+  };
+
   // State
-  const [dept, setDept] = useState(defaultDept);
+  const [dept, setDept] = useState(getDeptFromPath);
   const [line, setLine] = useState(defaultLine);
   const [deptMenuOpen, setDeptMenuOpen] = useState(false);
   const [lineMenuOpen, setLineMenuOpen] = useState(false);
@@ -162,11 +174,17 @@ export default function AppHeader({
                   <button
                     key={d.id}
                     type="button"
-                    className={`sfp-dropdown-option ${d.id === dept ? 'active' : ''}`}
+                    className={`sfp-dropdown-option ${d.id === dept ? 'active' : ''} ${d.id === 'CIP' ? 'sfp-opt-cip' : ''}`}
                     onClick={() => {
+                      setDeptMenuOpen(false);
+                      if (d.id === 'CIP') {
+                        setDept('CIP');
+                        router.push('/cip/analysis');
+                        return;
+                      }
                       setDept(d.id);
                       setLine((LINES[d.id] && LINES[d.id][0]) || 'Line 1');
-                      setDeptMenuOpen(false);
+                      router.push('/dashboard');
                     }}
                   >
                     <span className="sfp-opt-code">{d.id}</span>
@@ -178,10 +196,8 @@ export default function AppHeader({
             )}
           </div>
 
-          {/* Segment Divider */}
+          {/* Segment Divider + Line segment */}
           <div className="sfp-segment-divider" />
-
-          {/* Line segment */}
           <div className="sfp-segment-item" ref={lineRef}>
             <button
               type="button"
@@ -211,7 +227,7 @@ export default function AppHeader({
                       setLineMenuOpen(false);
                     }}
                   >
-                    <span className="sfp-opt-code">{l}</span>
+                    <span className="sfp-opt-name">{l}</span>
                     {l === line && <Icon name="check" size="small" className="sfp-opt-check" />}
                   </button>
                 ))}
