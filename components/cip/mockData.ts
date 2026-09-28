@@ -47,9 +47,17 @@ function generateMockData(): CIPDayData[] {
     'CIP 5': 0.15,
   };
 
-  // Specific on-time targets for the last 7 days to match Figma's primary visual
-  // Wed 09/09: 99%, Thu 09/10: 89%, Fri 09/11: 65%, Mon 09/14: 80%, Tue 09/15: 78%, Wed 09/16: 45%, Thu 09/17: 25% (testing <30% red)
-  const targetOnTimes = [99, 89, 65, 80, 78, 45, 25];
+  // Specific on-time targets for the last 7 days to match Figma's 7D design (28840:6295)
+  // Wed 09/09: 99%, Thu 09/10: 89%, Fri 09/11: 65%, Sat 09/12: 80%, Mon 09/14: 80%, Tue 09/15: 78%, Wed 09/15: 65%
+  const target7D = [
+    { label: 'Wed 09/09', onTime: 99, fc: 32, nc: 0, offRate: 1 },
+    { label: 'Thu 09/10', onTime: 89, fc: 28, nc: 4, offRate: 12 },
+    { label: 'Fri 09/11', onTime: 65, fc: 12, nc: 7, offRate: 35 },
+    { label: 'Sat 09/12', onTime: 80, fc: 20, nc: 3, offRate: 12 },
+    { label: 'Mon 09/14', onTime: 80, fc: 32, nc: 9, offRate: 22 },
+    { label: 'Tue 09/15', onTime: 78, fc: 9, nc: 11, offRate: 55 },
+    { label: 'Wed 09/15', onTime: 65, fc: 32, nc: 9, offRate: 22 },
+  ];
 
   for (let i = 39; i >= 0; i--) {
     const date = new Date(endDate);
@@ -57,7 +65,7 @@ function generateMockData(): CIPDayData[] {
     const dayName = dayNames[date.getDay()];
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    const dateLabel = `${dayName} ${mm}/${dd}`;
+    let dateLabel = `${dayName} ${mm}/${dd}`;
 
     const lineData: Record<CIPLine, CIPLineDay> = {} as Record<CIPLine, CIPLineDay>;
 
@@ -67,11 +75,14 @@ function generateMockData(): CIPDayData[] {
 
     // Check if within the last 7 days
     const isTargetDay = i < 7;
-    const targetOnTime = isTargetDay ? targetOnTimes[6 - i] : undefined;
+    const targetSpec = isTargetDay ? target7D[6 - i] : undefined;
+    if (targetSpec) {
+      dateLabel = targetSpec.label;
+    }
 
     for (const line of CIP_LINES) {
-      const baseOffTime = targetOnTime !== undefined
-        ? (100 - targetOnTime) / 100
+      const baseOffTime = targetSpec !== undefined
+        ? (100 - targetSpec.onTime) / 100
         : lineOffsets[line] + rand() * 0.25;
 
       const runs = Math.floor(rand() * 4) + 5; // 5–8 runs per line
@@ -96,17 +107,20 @@ function generateMockData(): CIPDayData[] {
       notCompleted += nc;
     }
 
-    const calculatedOffTime = targetOnTime !== undefined
-      ? (100 - targetOnTime)
+    const calculatedOffTime = targetSpec !== undefined
+      ? targetSpec.offRate
       : (totalRuns > 0 ? Math.round((notCompleted / totalRuns) * 100) : 0);
+
+    const calculatedFC = targetSpec !== undefined ? targetSpec.fc : fullyCompleted;
+    const calculatedNC = targetSpec !== undefined ? targetSpec.nc : notCompleted;
 
     days.push({
       date,
       dateLabel,
       lines: lineData,
-      totalRuns,
-      fullyCompleted,
-      notCompleted,
+      totalRuns: targetSpec !== undefined ? calculatedFC + calculatedNC : totalRuns,
+      fullyCompleted: calculatedFC,
+      notCompleted: calculatedNC,
       offTimeRate: calculatedOffTime,
     });
   }
@@ -273,3 +287,126 @@ export function getDeviationTimeSeries(days: CIPDayData[], selectedLines: CIPLin
     };
   });
 }
+
+// Unified chart block for rendering trend columns (days or grouped weeks)
+export interface CIPChartBlock {
+  key: string;
+  label: string;
+  subtag?: string;
+  totalRuns: number;
+  fullyCompleted: number;
+  notCompleted: number;
+  offTimeRate: number;
+  onTimeRate: number;
+  statLabel: 'Fully Completed' | 'Not Completed';
+  statRuns: number;
+  lines?: Record<CIPLine, CIPLineDay>;
+}
+
+export function getChartBlocksForPreset(
+  preset: '1D' | '3D' | '7D' | '30D' | 'Custom',
+  days: CIPDayData[],
+  selectedLines: CIPLine[]
+): CIPChartBlock[] {
+  if (preset === '30D') {
+    // 4 weekly blocks matching Figma design 28840:4724
+    // Week 1: 99% on-time, 32 Runs, 1% off-time
+    // Week 2: 80% on-time, 28 Runs, 12% off-time (selected in Figma)
+    // Week 3: 78% on-time, 12 Runs, 35% off-time
+    // Week 4: 65% on-time, 20 Runs, 12% off-time
+    return [
+      {
+        key: 'week-1',
+        label: 'Week 06/02 - 02/06',
+        totalRuns: 33,
+        fullyCompleted: 32,
+        notCompleted: 1,
+        offTimeRate: 1,
+        onTimeRate: 99,
+        statLabel: 'Fully Completed',
+        statRuns: 32,
+        lines: {
+          'CIP 1': { totalRuns: 10, fullyCompleted: 10, notCompleted: 0, offTimeRate: 0, avgDuration: 30, skipped: 0, aborted: 0 },
+          'CIP 2': { totalRuns: 11, fullyCompleted: 11, notCompleted: 0, offTimeRate: 0, avgDuration: 32, skipped: 0, aborted: 0 },
+          'CIP 3': { totalRuns: 12, fullyCompleted: 11, notCompleted: 1, offTimeRate: 8, avgDuration: 28, skipped: 0, aborted: 0 },
+          'CIP 4': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+          'CIP 5': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+        },
+      },
+      {
+        key: 'week-2',
+        label: 'Week 06/09 - 02/13',
+        totalRuns: 32,
+        fullyCompleted: 28,
+        notCompleted: 4,
+        offTimeRate: 12,
+        onTimeRate: 80,
+        statLabel: 'Fully Completed',
+        statRuns: 28,
+        lines: {
+          'CIP 1': { totalRuns: 5, fullyCompleted: 3, notCompleted: 1, offTimeRate: 20, avgDuration: 30, skipped: 0, aborted: 0 },
+          'CIP 2': { totalRuns: 10, fullyCompleted: 8, notCompleted: 1, offTimeRate: 10, avgDuration: 34, skipped: 0, aborted: 0 },
+          'CIP 3': { totalRuns: 17, fullyCompleted: 17, notCompleted: 2, offTimeRate: 11, avgDuration: 29, skipped: 0, aborted: 0 },
+          'CIP 4': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+          'CIP 5': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+        },
+      },
+      {
+        key: 'week-3',
+        label: 'Week 06/16 - 02/20',
+        totalRuns: 19,
+        fullyCompleted: 12,
+        notCompleted: 7,
+        offTimeRate: 35,
+        onTimeRate: 78,
+        statLabel: 'Fully Completed',
+        statRuns: 12,
+        lines: {
+          'CIP 1': { totalRuns: 5, fullyCompleted: 3, notCompleted: 2, offTimeRate: 40, avgDuration: 31, skipped: 0, aborted: 0 },
+          'CIP 2': { totalRuns: 6, fullyCompleted: 4, notCompleted: 2, offTimeRate: 33, avgDuration: 35, skipped: 0, aborted: 0 },
+          'CIP 3': { totalRuns: 8, fullyCompleted: 5, notCompleted: 3, offTimeRate: 37, avgDuration: 33, skipped: 0, aborted: 0 },
+          'CIP 4': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+          'CIP 5': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+        },
+      },
+      {
+        key: 'week-4',
+        label: 'Week 06/23 - 02/27',
+        totalRuns: 23,
+        fullyCompleted: 20,
+        notCompleted: 3,
+        offTimeRate: 12,
+        onTimeRate: 65,
+        statLabel: 'Fully Completed',
+        statRuns: 20,
+        lines: {
+          'CIP 1': { totalRuns: 6, fullyCompleted: 5, notCompleted: 1, offTimeRate: 16, avgDuration: 29, skipped: 0, aborted: 0 },
+          'CIP 2': { totalRuns: 7, fullyCompleted: 6, notCompleted: 1, offTimeRate: 14, avgDuration: 30, skipped: 0, aborted: 0 },
+          'CIP 3': { totalRuns: 10, fullyCompleted: 9, notCompleted: 1, offTimeRate: 10, avgDuration: 32, skipped: 0, aborted: 0 },
+          'CIP 4': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+          'CIP 5': { totalRuns: 0, fullyCompleted: 0, notCompleted: 0, offTimeRate: 0, avgDuration: 0, skipped: 0, aborted: 0 },
+        },
+      },
+    ];
+  }
+
+  // 1D, 3D, 7D, or Custom
+  return days.map((d, idx) => {
+    const onTime = 100 - d.offTimeRate;
+    const isNotCompleted = d.notCompleted > d.totalRuns * 0.4;
+    return {
+      key: `day-${idx}-${d.dateLabel}`,
+      label: d.dateLabel,
+      subtag: days.length === 1 ? '· 24h Intra-Day Trend' : undefined,
+      totalRuns: d.totalRuns,
+      fullyCompleted: d.fullyCompleted,
+      notCompleted: d.notCompleted,
+      offTimeRate: d.offTimeRate,
+      onTimeRate: onTime,
+      statLabel: isNotCompleted ? 'Not Completed' : 'Fully Completed',
+      statRuns: isNotCompleted ? d.notCompleted : d.fullyCompleted,
+      lines: d.lines,
+    };
+  });
+}
+

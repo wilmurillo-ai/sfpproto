@@ -4,7 +4,7 @@ import React from 'react';
 import { Icon } from '@/components/ui';
 import { CIPKPISummary } from './mockData';
 
-export type CIPKPIKey = 'fullyCompleted' | 'onTimeRate' | 'offTargetRate' | 'totalOverrunTime' | 'shiftSpreadDelta';
+export type CIPKPIKey = 'fullyCompleted' | 'onTimeRate' | 'offTargetRate' | 'totalOverrunTime';
 
 interface CIPKPIStripProps {
   summary: CIPKPISummary;
@@ -50,12 +50,6 @@ export default function CIPKPIStrip({ summary, activeKPI, onSelectKPI }: CIPKPIS
       badge: { text: 'Behind', type: 'orange' },
       footer: 'Line Availability Slip',
       hasAccent: true,
-    },
-    {
-      key: 'shiftSpreadDelta',
-      title: 'Shift Spread Delta',
-      value: '25.0 pts',
-      footer: 'Best: Shift 1 | Worst: Shift 3',
     },
   ];
 

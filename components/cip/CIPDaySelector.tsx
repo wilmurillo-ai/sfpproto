@@ -1,20 +1,14 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Icon } from '@/components/ui';
-import { CIPDayData } from './mockData';
+import { CIPChartBlock } from './mockData';
 import { CIPKPIKey } from './CIPKPIStrip';
 
 interface CIPDaySelectorProps {
-  days: CIPDayData[];
-  selectedDayIndex: number | null;
-  onSelectDay: (index: number) => void;
+  blocks: CIPChartBlock[];
+  selectedBlockIndex: number | null;
+  onSelectBlock: (index: number) => void;
   activeKPI: CIPKPIKey | null;
-}
-
-// On-time rate = 100 - offTimeRate
-function getOnTimeRate(day: CIPDayData): number {
-  return 100 - day.offTimeRate;
 }
 
 // Requirement: green if >= 75%, orange if < 75% (and >= 30%), red if < 30%
@@ -30,27 +24,25 @@ function getOffTimeColor(offRate: number): string {
   return 'var(--red-400, #fa6443)';
 }
 
-function isDayHighlightedForKPI(day: CIPDayData, kpi: CIPKPIKey | null): boolean {
+function isBlockHighlightedForKPI(block: CIPChartBlock, kpi: CIPKPIKey | null): boolean {
   if (!kpi) return true;
   switch (kpi) {
     case 'fullyCompleted':
-      return getOnTimeRate(day) >= 75;
+      return block.onTimeRate >= 75;
     case 'onTimeRate':
-      return getOnTimeRate(day) >= 75;
+      return block.onTimeRate >= 75;
     case 'offTargetRate':
-      return day.offTimeRate > 15;
+      return block.offTimeRate > 15;
     case 'totalOverrunTime':
-      return day.offTimeRate > 20;
-    case 'shiftSpreadDelta':
-      return true;
+      return block.offTimeRate > 20;
     default:
       return true;
   }
 }
 
 // Generate intra-day 24h checkpoints for a single day (1D timeframe)
-function getIntraDayCheckpoints(day: CIPDayData) {
-  const base = 100 - day.offTimeRate;
+function getIntraDayCheckpoints(block: CIPChartBlock) {
+  const base = block.onTimeRate;
   const deltas = [6, -8, 5, -14, 4, -5];
   const times = ['04:00', '08:00', '12:00', '16:00', '20:00', '23:00'];
   return times.map((time, i) => {
@@ -59,26 +51,14 @@ function getIntraDayCheckpoints(day: CIPDayData) {
   });
 }
 
-const VISIBLE_WINDOW = 6;
-
 export default function CIPDaySelector({
-  days,
-  selectedDayIndex,
-  onSelectDay,
+  blocks,
+  selectedBlockIndex,
+  onSelectBlock,
   activeKPI,
 }: CIPDaySelectorProps) {
-  const [windowStart, setWindowStart] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1100);
-
-  useEffect(() => {
-    // Reset window start when days array changes
-    if (days.length <= VISIBLE_WINDOW) {
-      setWindowStart(0);
-    } else {
-      setWindowStart(Math.max(0, days.length - VISIBLE_WINDOW));
-    }
-  }, [days.length]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -89,16 +69,6 @@ export default function CIPDaySelector({
     return () => observer.disconnect();
   }, []);
 
-  const visibleDays = useMemo(() => {
-    if (days.length <= VISIBLE_WINDOW) {
-      return days;
-    }
-    return days.slice(windowStart, windowStart + VISIBLE_WINDOW);
-  }, [days, windowStart]);
-
-  const canScrollLeft = windowStart > 0;
-  const canScrollRight = windowStart + VISIBLE_WINDOW < days.length;
-
   const svgW = containerWidth;
   const svgH = 150;
   const padX = 0;
@@ -106,7 +76,7 @@ export default function CIPDaySelector({
   const chartW = svgW - padX * 2;
   const chartH = svgH - padY * 2;
 
-  // Compute trend path and dot points depending on whether it is 1D or multi-day
+  // Compute trend path and dot points depending on whether it is 1D or multi-block
   interface TrendPoint {
     x: number;
     y: number;
@@ -117,13 +87,13 @@ export default function CIPDaySelector({
   }
 
   const { trendPath, trendPoints } = useMemo<{ trendPath: string; trendPoints: TrendPoint[] }>(() => {
-    if (visibleDays.length === 0) {
+    if (blocks.length === 0) {
       return { trendPath: '', trendPoints: [] };
     }
 
-    if (visibleDays.length === 1) {
+    if (blocks.length === 1) {
       // 1D: Generate intra-day 24h trend across 100% width
-      const checkpoints = getIntraDayCheckpoints(visibleDays[0]);
+      const checkpoints = getIntraDayCheckpoints(blocks[0]);
       const n = checkpoints.length;
       const rates = checkpoints.map((c) => c.rate);
       const minRate = Math.min(...rates, 20);
@@ -154,24 +124,23 @@ export default function CIPDaySelector({
       return { trendPath: path, trendPoints: pts };
     }
 
-    // Multi-day (2, 3, 6, etc.): Point per day column
-    const rates = visibleDays.map(getOnTimeRate);
+    // Multi-block (3D, 7D, 30D weeks): Point per block column
+    const rates = blocks.map((b) => b.onTimeRate);
     const minRate = Math.min(...rates, 20);
     const maxRate = Math.max(...rates, 100);
     const range = maxRate - minRate || 1;
-    const colW = chartW / visibleDays.length;
+    const colW = chartW / blocks.length;
 
-    const pts: TrendPoint[] = visibleDays.map((day, i) => {
-      const rate = getOnTimeRate(day);
+    const pts: TrendPoint[] = blocks.map((block, i) => {
+      const rate = block.onTimeRate;
       const x = padX + colW * i + colW / 2;
       const y = padY + chartH - ((rate - minRate) / range) * chartH;
-      const globalIndex = windowStart + i;
       return {
         x,
         y,
         rate,
         color: getOnTimeColor(rate),
-        isSelected: selectedDayIndex === globalIndex,
+        isSelected: selectedBlockIndex === i,
       };
     });
 
@@ -183,62 +152,34 @@ export default function CIPDaySelector({
     }, '');
 
     return { trendPath: path, trendPoints: pts };
-  }, [visibleDays, chartW, chartH, selectedDayIndex, windowStart]);
+  }, [blocks, chartW, chartH, selectedBlockIndex]);
 
   return (
     <div className="cip-day-selector" ref={containerRef}>
-      {/* Floating Left scroll button (only for multi-day windows > 6) */}
-      {canScrollLeft && (
-        <button
-          type="button"
-          className="cip-day-floating-scroll cip-day-floating-left"
-          onClick={() => setWindowStart((w) => Math.max(0, w - 1))}
-          aria-label="Scroll left"
-        >
-          <Icon name="chevron_left" size="medium" />
-        </button>
-      )}
-
-      {/* Floating Right scroll button (only for multi-day windows > 6) */}
-      {canScrollRight && (
-        <button
-          type="button"
-          className="cip-day-floating-scroll cip-day-floating-right"
-          onClick={() => setWindowStart((w) => Math.min(days.length - VISIBLE_WINDOW, w + 1))}
-          aria-label="Scroll right"
-        >
-          <Icon name="chevron_right" size="medium" />
-        </button>
-      )}
-
-      {/* Day columns with fluid width: 1 col for 1D, 3 cols for 3D, up to 6 cols */}
+      {/* Block columns with fluid width: 1 col for 1D, 3 cols for 3D, 7 cols for 7D, 4 cols for 30D */}
       <div
         className="cip-day-columns"
         style={{
-          gridTemplateColumns: `repeat(${visibleDays.length}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${blocks.length}, minmax(0, 1fr))`,
         }}
       >
-        {visibleDays.map((day, vi) => {
-          const globalIndex = windowStart + vi;
-          const isSelected = selectedDayIndex === globalIndex;
-          const isHighlighted = isDayHighlightedForKPI(day, activeKPI);
+        {blocks.map((block, i) => {
+          const isSelected = selectedBlockIndex === i;
+          const isHighlighted = isBlockHighlightedForKPI(block, activeKPI);
           const isDimmed = activeKPI !== null && !isHighlighted;
-          const offRate = day.offTimeRate;
+          const offRate = block.offTimeRate;
 
           return (
             <button
-              key={day.dateLabel}
+              key={block.key}
               type="button"
               className={`cip-day-block ${isSelected ? 'is-selected' : ''} ${isDimmed ? 'is-dimmed' : ''}`}
-              onClick={() => onSelectDay(globalIndex)}
+              onClick={() => onSelectBlock(i)}
             >
-              {/* Day label */}
+              {/* Day / Week label */}
               <div className="cip-day-label">
-                {visibleDays.length === 1 ? (
-                  <>{day.dateLabel} <span className="cip-day-subtag">· 24h Intra-Day Trend</span></>
-                ) : (
-                  day.dateLabel
-                )}
+                {block.label}
+                {block.subtag && <span className="cip-day-subtag">{block.subtag}</span>}
               </div>
 
               {/* Spacer for SVG trend chart */}
@@ -247,14 +188,8 @@ export default function CIPDaySelector({
               {/* Bottom stats */}
               <div className="cip-day-stats">
                 <div className="cip-day-stat">
-                  <span className="cip-day-stat-label">
-                    {day.notCompleted > (day.totalRuns * 0.4) ? 'Not Completed' : 'Fully Completed'}
-                  </span>
-                  <span className="cip-day-stat-value">
-                    {day.notCompleted > (day.totalRuns * 0.4)
-                      ? `${day.notCompleted} Runs`
-                      : `${day.fullyCompleted} Runs`}
-                  </span>
+                  <span className="cip-day-stat-label">{block.statLabel}</span>
+                  <span className="cip-day-stat-value">{block.statRuns} Runs</span>
                 </div>
                 <div className="cip-day-stat">
                   <span className="cip-day-stat-label">Off-Time Rate</span>

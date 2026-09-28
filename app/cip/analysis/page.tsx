@@ -10,7 +10,13 @@ import {
   CIPDateRangeValue,
   CIPKPIKey,
 } from '@/components/cip';
-import { CIPLine, getDaysForPreset, getAggregatedDays, getKPISummary } from '@/components/cip/mockData';
+import {
+  CIPLine,
+  getDaysForPreset,
+  getAggregatedDays,
+  getKPISummary,
+  getChartBlocksForPreset,
+} from '@/components/cip/mockData';
 
 function addDays(date: Date, n: number): Date {
   const d = new Date(date);
@@ -35,8 +41,8 @@ export default function CIPAnalysisPage() {
   // Active KPI filter
   const [activeKPI, setActiveKPI] = useState<CIPKPIKey | null>(null);
 
-  // Selected day in day-selector: Default to index 1 (Thu 09/10) matching Figma
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(1);
+  // Selected block index: Default to index 1 (matching Figma 28840:4724 & 28840:6295)
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(1);
 
   // Compute visible days from preset
   const presetDays = useMemo(() => {
@@ -61,9 +67,15 @@ export default function CIPAnalysisPage() {
     [presetDays, selectedLines]
   );
 
+  // Compute chart blocks: 4 week blocks for 30D, full 7 days for 7D, 3 for 3D, 1 for 1D
+  const chartBlocks = useMemo(
+    () => getChartBlocksForPreset(dateRange.preset, aggregatedDays, selectedLines),
+    [dateRange.preset, aggregatedDays, selectedLines]
+  );
+
   const handleDateChange = (val: CIPDateRangeValue) => {
     setDateRange(val);
-    setSelectedDayIndex(null);
+    setSelectedBlockIndex(1); // Default select second block matching Figma
   };
 
   return (
@@ -79,21 +91,21 @@ export default function CIPAnalysisPage() {
           </div>
         </div>
 
-        {/* ── KPI Strip ── */}
+        {/* ── KPI Strip (4 cards) ── */}
         <CIPKPIStrip summary={summary} activeKPI={activeKPI} onSelectKPI={setActiveKPI} />
 
-        {/* ── Day Selector with Trend Line ── */}
+        {/* ── Day / Week Selector with Trend Line ── */}
         <CIPDaySelector
-          days={aggregatedDays}
-          selectedDayIndex={selectedDayIndex}
-          onSelectDay={(i) => setSelectedDayIndex(i === selectedDayIndex ? null : i)}
+          blocks={chartBlocks}
+          selectedBlockIndex={selectedBlockIndex}
+          onSelectBlock={(i) => setSelectedBlockIndex(i === selectedBlockIndex ? null : i)}
           activeKPI={activeKPI}
         />
 
-        {/* ── Day Breakdown (3 columns) ── */}
+        {/* ── Day / Week Breakdown (Distribution & Deviations) ── */}
         <CIPDayBreakdown
-          days={aggregatedDays}
-          selectedDayIndex={selectedDayIndex}
+          blocks={chartBlocks}
+          selectedBlockIndex={selectedBlockIndex}
           selectedLines={selectedLines}
           activeKPI={activeKPI}
         />

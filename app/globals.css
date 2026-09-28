@@ -4917,7 +4917,7 @@ img, svg { display: block; }
 /* ── CIP KPI Strip ── */
 .cip-kpi-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
@@ -5327,48 +5327,65 @@ img, svg { display: block; }
   font-weight: 400;
 }
 
-/* ── Deviation Chart ── */
+/* ── Deviation Chart (Figma 28840:5557) ── */
 .cip-breakdown-deviations-wrap {
   width: 100%;
 }
 
-.cip-deviation-chart {
+.cip-actual-deviation-chart {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  width: 100%;
+  position: relative;
 }
 
-.cip-deviation-legend {
-  display: flex;
-  gap: 20px;
-  align-items: center;
+.cip-actual-deviation-svg-container {
+  width: 100%;
+  height: 310px;
+  position: relative;
 }
 
-.cip-dev-legend-item {
+.cip-actual-deviation-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cip-deviation-rect {
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.cip-deviation-bar-group:hover .cip-deviation-rect {
+  filter: brightness(1.15);
+  cursor: pointer;
+}
+
+.cip-deviation-legend-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  margin-top: 14px;
+}
+
+.cip-deviation-legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.cip-dev-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.cip-dev-legend-text {
   font-size: 12px;
   font-weight: 500;
   color: #8e8e93;
-}
-
-.cip-dev-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.cip-deviation-svg-wrap {
-  position: relative;
-  height: 180px;
-  width: 100%;
-}
-
-.cip-deviation-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 /* ── AppHeader: CIP dept option highlight ── */
