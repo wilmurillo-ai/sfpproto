@@ -41,6 +41,9 @@ export default function CIPAnalysisPage() {
   // Active KPI filter
   const [activeKPI, setActiveKPI] = useState<CIPKPIKey | null>(null);
 
+  // 30D view mode: 'weekly' (default 4 week blocks) or 'day' (30 individual daily columns)
+  const [viewMode, setViewMode] = useState<'weekly' | 'day'>('weekly');
+
   // Selected block index: Default to index 1 (matching Figma 28840:4724 & 28840:6295)
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(1);
 
@@ -67,15 +70,44 @@ export default function CIPAnalysisPage() {
     [presetDays, selectedLines]
   );
 
-  // Compute chart blocks: 4 week blocks for 30D, full 7 days for 7D, 3 for 3D, 1 for 1D
+  // Compute chart blocks: weekly or day blocks for 30D, full 7 days for 7D, 3 for 3D, 1 for 1D
   const chartBlocks = useMemo(
-    () => getChartBlocksForPreset(dateRange.preset, aggregatedDays, selectedLines),
-    [dateRange.preset, aggregatedDays, selectedLines]
+    () => getChartBlocksForPreset(dateRange.preset, aggregatedDays, selectedLines, viewMode),
+    [dateRange.preset, aggregatedDays, selectedLines, viewMode]
   );
+
+  // Trend subtitle based on preset
+  const trendSubtitle = useMemo(() => {
+    switch (dateRange.preset) {
+      case '1D':
+        return '24-Hour Trend';
+      case '3D':
+        return '3-Day Trend';
+      case '7D':
+        return '7-Day Trend';
+      case '30D':
+        return '30-Day Trend';
+      case 'Custom':
+        return 'Custom Range Trend';
+      default:
+        return 'Trend';
+    }
+  }, [dateRange.preset]);
 
   const handleDateChange = (val: CIPDateRangeValue) => {
     setDateRange(val);
+    setViewMode('weekly');
     setSelectedBlockIndex(1); // Default select second block matching Figma
+  };
+
+  const handleViewModeChange = (mode: 'weekly' | 'day') => {
+    setViewMode(mode);
+    // In day view, select index 9 (06/10) to match Figma 28918:14272
+    if (mode === 'day') {
+      setSelectedBlockIndex(9);
+    } else {
+      setSelectedBlockIndex(1);
+    }
   };
 
   return (
@@ -94,15 +126,19 @@ export default function CIPAnalysisPage() {
         {/* ── KPI Strip (4 cards) ── */}
         <CIPKPIStrip summary={summary} activeKPI={activeKPI} onSelectKPI={setActiveKPI} />
 
-        {/* ── Day / Week Selector with Trend Line ── */}
+        {/* ── Trend Chart Section with Subtitle & Zoom Controls ── */}
         <CIPDaySelector
           blocks={chartBlocks}
           selectedBlockIndex={selectedBlockIndex}
           onSelectBlock={(i) => setSelectedBlockIndex(i === selectedBlockIndex ? null : i)}
           activeKPI={activeKPI}
+          subtitle={trendSubtitle}
+          timeframePreset={dateRange.preset}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
         />
 
-        {/* ── Day / Week Breakdown (Distribution & Deviations) ── */}
+        {/* ── Deviations Distribution (Drilldown / Funnel) ── */}
         <CIPDayBreakdown
           blocks={chartBlocks}
           selectedBlockIndex={selectedBlockIndex}

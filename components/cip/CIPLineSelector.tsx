@@ -20,13 +20,14 @@ export default function CIPLineSelector({ selectedLines, onChange }: CIPLineSele
 
   const toggleLine = (line: CIPLine) => {
     if (selectedLines.includes(line)) {
-      // Don't allow deselecting all lines if only 1 is left, or allow toggle
       const next = selectedLines.filter((l) => l !== line);
       onChange(next);
     } else {
       onChange([...selectedLines, line]);
     }
   };
+
+  const hasSelections = selectedLines.length > 0;
 
   return (
     <div className="cip-line-selector" role="group" aria-label="CIP Line Selection">
@@ -67,6 +68,18 @@ export default function CIPLineSelector({ selectedLines, onChange }: CIPLineSele
         aria-label="Next lines"
       >
         <Icon name="chevron_right" size="medium" />
+      </button>
+
+      {/* Reset/Clean all selections button (Figma 28901:12794) */}
+      <button
+        type="button"
+        className={`cip-line-reset-btn ${!hasSelections ? 'is-disabled' : ''}`}
+        onClick={() => onChange([])}
+        disabled={!hasSelections}
+        title={hasSelections ? 'Reset CIP Line selections' : 'No lines selected'}
+        aria-label="Reset line selections"
+      >
+        <Icon name="close" size="small" />
       </button>
     </div>
   );

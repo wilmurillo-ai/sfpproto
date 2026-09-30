@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { Icon } from '@/components/ui';
 import { CIPChartBlock } from './mockData';
 import { CIPKPIKey } from './CIPKPIStrip';
 
@@ -9,18 +10,16 @@ interface CIPDaySelectorProps {
   selectedBlockIndex: number | null;
   onSelectBlock: (index: number) => void;
   activeKPI: CIPKPIKey | null;
+  subtitle?: string;
+  timeframePreset?: '1D' | '3D' | '7D' | '30D' | 'Custom';
+  viewMode?: 'weekly' | 'day';
+  onViewModeChange?: (mode: 'weekly' | 'day') => void;
 }
 
 // Requirement: green if >= 75%, orange if < 75% (and >= 30%), red if < 30%
 export function getOnTimeColor(rate: number): string {
   if (rate >= 75) return 'var(--green-400, #3db97a)';
   if (rate >= 30) return 'var(--orange-400, #e78710)';
-  return 'var(--red-400, #fa6443)';
-}
-
-function getOffTimeColor(offRate: number): string {
-  if (offRate <= 25) return '#ffffff'; // On-time is >= 75%
-  if (offRate <= 70) return 'var(--orange-400, #e78710)';
   return 'var(--red-400, #fa6443)';
 }
 
@@ -56,9 +55,14 @@ export default function CIPDaySelector({
   selectedBlockIndex,
   onSelectBlock,
   activeKPI,
+  subtitle,
+  timeframePreset,
+  viewMode = 'weekly',
+  onViewModeChange,
 }: CIPDaySelectorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1100);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -69,10 +73,12 @@ export default function CIPDaySelector({
     return () => observer.disconnect();
   }, []);
 
+  const isDayView = timeframePreset === '30D' && viewMode === 'day';
+
   const svgW = containerWidth;
-  const svgH = 150;
+  const svgH = 140;
   const padX = 0;
-  const padY = 32;
+  const padY = 28;
   const chartW = svgW - padX * 2;
   const chartH = svgH - padY * 2;
 
@@ -83,6 +89,7 @@ export default function CIPDaySelector({
     rate: number;
     color: string;
     isSelected: boolean;
+    isHovered: boolean;
     timeLabel?: string;
   }
 
@@ -111,6 +118,7 @@ export default function CIPDaySelector({
           color: getOnTimeColor(cp.rate),
           timeLabel: cp.time,
           isSelected: false,
+          isHovered: false,
         };
       });
 
@@ -124,7 +132,7 @@ export default function CIPDaySelector({
       return { trendPath: path, trendPoints: pts };
     }
 
-    // Multi-block (3D, 7D, 30D weeks): Point per block column
+    // Multi-block (3D, 7D, 30D weeks, or 30D days): Point per block column
     const rates = blocks.map((b) => b.onTimeRate);
     const minRate = Math.min(...rates, 20);
     const maxRate = Math.max(...rates, 100);
@@ -141,6 +149,7 @@ export default function CIPDaySelector({
         rate,
         color: getOnTimeColor(rate),
         isSelected: selectedBlockIndex === i,
+        isHovered: hoveredIndex === i,
       };
     });
 
@@ -152,147 +161,187 @@ export default function CIPDaySelector({
     }, '');
 
     return { trendPath: path, trendPoints: pts };
-  }, [blocks, chartW, chartH, selectedBlockIndex]);
+  }, [blocks, chartW, chartH, selectedBlockIndex, hoveredIndex]);
 
   return (
-    <div className="cip-day-selector" ref={containerRef}>
-      {/* Block columns with fluid width: 1 col for 1D, 3 cols for 3D, 7 cols for 7D, 4 cols for 30D */}
-      <div
-        className="cip-day-columns"
-        style={{
-          gridTemplateColumns: `repeat(${blocks.length}, minmax(0, 1fr))`,
-        }}
-      >
-        {blocks.map((block, i) => {
-          const isSelected = selectedBlockIndex === i;
-          const isHighlighted = isBlockHighlightedForKPI(block, activeKPI);
-          const isDimmed = activeKPI !== null && !isHighlighted;
-          const offRate = block.offTimeRate;
-
-          return (
+    <div className="cip-day-selector-wrapper">
+      {/* ── Subtitle + Zoom Controls Header ── */}
+      <div className="cip-trend-header">
+        <h3 className="cip-trend-title">{subtitle || 'Trend'}</h3>
+        {timeframePreset === '30D' && onViewModeChange && (
+          <div className="cip-trend-zoom-controls" role="group" aria-label="30-Day Zoom Controls">
             <button
-              key={block.key}
               type="button"
-              className={`cip-day-block ${isSelected ? 'is-selected' : ''} ${isDimmed ? 'is-dimmed' : ''}`}
-              onClick={() => onSelectBlock(i)}
+              className={`cip-zoom-btn ${viewMode === 'weekly' ? 'is-active' : ''}`}
+              onClick={() => onViewModeChange('weekly')}
+              title="Weekly view (Zoom out)"
+              aria-label="Weekly view"
             >
-              {/* Day / Week label */}
-              <div className="cip-day-label">
-                {block.label}
-                {block.subtag && <span className="cip-day-subtag">{block.subtag}</span>}
-              </div>
-
-              {/* Spacer for SVG trend chart */}
-              <div className="cip-day-chart-spacer" />
-
-              {/* Bottom stats */}
-              <div className="cip-day-stats">
-                <div className="cip-day-stat">
-                  <span className="cip-day-stat-label">{block.statLabel}</span>
-                  <span className="cip-day-stat-value">{block.statRuns} Runs</span>
-                </div>
-                <div className="cip-day-stat">
-                  <span className="cip-day-stat-label">Off-Time Rate</span>
-                  <span
-                    className="cip-day-stat-value"
-                    style={{ color: getOffTimeColor(offRate) }}
-                  >
-                    {offRate}%
-                  </span>
-                </div>
-              </div>
+              <Icon name="zoom_out" size="small" />
             </button>
-          );
-        })}
+            <button
+              type="button"
+              className={`cip-zoom-btn ${viewMode === 'day' ? 'is-active' : ''}`}
+              onClick={() => onViewModeChange('day')}
+              title="Day view (Zoom in)"
+              aria-label="Day view"
+            >
+              <Icon name="zoom_in" size="small" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* SVG Trend Line overlay */}
-      <div className="cip-day-trend-overlay" aria-hidden="true">
-        <svg
-          width={svgW}
-          height={svgH}
-          viewBox={`0 0 ${svgW} ${svgH}`}
-          className="cip-trend-svg"
-          preserveAspectRatio="none"
+      <div
+        className={`cip-day-selector ${isDayView ? 'is-day-view' : ''}`}
+        ref={containerRef}
+      >
+        {/* Block columns: height 215px */}
+        <div
+          className="cip-day-columns"
+          style={{
+            gridTemplateColumns: `repeat(${blocks.length}, minmax(0, 1fr))`,
+          }}
         >
-          <defs>
-            <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4484f4" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#4484f4" stopOpacity="0" />
-            </linearGradient>
-          </defs>
+          {blocks.map((block, i) => {
+            const isSelected = selectedBlockIndex === i;
+            const isHovered = hoveredIndex === i;
+            const isHighlighted = isBlockHighlightedForKPI(block, activeKPI);
+            const isDimmed = activeKPI !== null && !isHighlighted;
+            const showDetails = !isDayView || isSelected || isHovered;
 
-          {/* Fill under curve */}
-          {trendPath && (
-            <path
-              d={`${trendPath} L ${padX + chartW},${padY + chartH} L ${padX},${padY + chartH} Z`}
-              fill="url(#trendGradient)"
-            />
-          )}
-
-          {/* Trend line */}
-          {trendPath && (
-            <path
-              d={trendPath}
-              fill="none"
-              stroke="#4484f4"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
-          {/* Dots + ON-TIME labels */}
-          {trendPoints.map((pt, i) => (
-            <g key={i}>
-              {/* Outer halo when selected */}
-              {pt.isSelected && (
-                <circle
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={11}
-                  fill="none"
-                  stroke={pt.color}
-                  strokeWidth="2"
-                  strokeOpacity="0.5"
-                />
-              )}
-              {/* Dot */}
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r={pt.isSelected ? 7 : 6}
-                fill={pt.color}
-              />
-              {/* On-time percentage label */}
-              <text
-                x={pt.x}
-                y={pt.y - 12}
-                textAnchor="middle"
-                fontSize="13"
-                fontWeight="700"
-                fill={pt.color}
-                fontFamily="Inter, sans-serif"
+            return (
+              <button
+                key={block.key}
+                type="button"
+                className={`cip-day-block ${isSelected ? 'is-selected' : ''} ${isDimmed ? 'is-dimmed' : ''} ${isDayView ? 'is-compact-day' : ''}`}
+                onClick={() => onSelectBlock(i)}
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex(null)}
               >
-                {pt.rate}%
-              </text>
-              {/* Time tag for 1D intra-day checkpoints */}
-              {pt.timeLabel && (
-                <text
-                  x={pt.x}
-                  y={padY + chartH + 16}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fontWeight="500"
-                  fill="#8E8E93"
-                  fontFamily="Inter, sans-serif"
-                >
-                  {pt.timeLabel}
-                </text>
-              )}
-            </g>
-          ))}
-        </svg>
+                {/* Day / Week label */}
+                <div className="cip-day-label">
+                  {block.label}
+                  {block.subtag && <span className="cip-day-subtag">{block.subtag}</span>}
+                </div>
+
+                {/* Spacer for SVG trend chart */}
+                <div className="cip-day-chart-spacer" />
+
+                {/* Bottom stats: Minimal '# Runs % Off-Time' matching Figma 28901:12822 */}
+                {!isDayView ? (
+                  <div className="cip-day-minimal-stats">
+                    <span className="cip-day-stat-runs">{block.statRuns} Runs</span>
+                    <span className="cip-day-stat-off">{block.offTimeRate}% Off-Time</span>
+                  </div>
+                ) : (
+                  // Day view: minimal stats only visible on select or hover (Figma 28918:14272)
+                  showDetails && (
+                    <div className="cip-day-tooltip-badge">
+                      <span className="cip-day-tooltip-runs">{block.statRuns} Runs</span>
+                      <span className="cip-day-tooltip-off">{block.offTimeRate}% Off-Time</span>
+                    </div>
+                  )
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* SVG Trend Line overlay */}
+        <div className="cip-day-trend-overlay" aria-hidden="true">
+          <svg
+            width={svgW}
+            height={svgH}
+            viewBox={`0 0 ${svgW} ${svgH}`}
+            className="cip-trend-svg"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4484f4" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#4484f4" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Fill under curve */}
+            {trendPath && (
+              <path
+                d={`${trendPath} L ${padX + chartW},${padY + chartH} L ${padX},${padY + chartH} Z`}
+                fill="url(#trendGradient)"
+              />
+            )}
+
+            {/* Trend line */}
+            {trendPath && (
+              <path
+                d={trendPath}
+                fill="none"
+                stroke="#4484f4"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+
+            {/* Dots + ON-TIME labels */}
+            {trendPoints.map((pt, i) => {
+              // In 30D day view: show dots only on hover or selection matching Figma 28918:14272
+              const shouldShowPoint = !isDayView || pt.isSelected || pt.isHovered;
+              if (!shouldShowPoint) return null;
+
+              return (
+                <g key={i}>
+                  {/* Outer halo when selected or hovered */}
+                  {(pt.isSelected || pt.isHovered) && (
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={11}
+                      fill="none"
+                      stroke={pt.color}
+                      strokeWidth="2"
+                      strokeOpacity="0.5"
+                    />
+                  )}
+                  {/* Dot */}
+                  <circle
+                    cx={pt.x}
+                    cy={pt.y}
+                    r={pt.isSelected ? 7 : 6}
+                    fill={pt.color}
+                  />
+                  {/* On-time percentage label */}
+                  <text
+                    x={pt.x}
+                    y={pt.y - 12}
+                    textAnchor="middle"
+                    fontSize="13"
+                    fontWeight="700"
+                    fill={pt.color}
+                    fontFamily="Inter, sans-serif"
+                  >
+                    {pt.rate}%
+                  </text>
+                  {/* Time tag for 1D intra-day checkpoints */}
+                  {pt.timeLabel && (
+                    <text
+                      x={pt.x}
+                      y={padY + chartH + 16}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fontWeight="500"
+                      fill="#8E8E93"
+                      fontFamily="Inter, sans-serif"
+                    >
+                      {pt.timeLabel}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       </div>
     </div>
   );

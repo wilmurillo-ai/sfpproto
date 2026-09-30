@@ -306,10 +306,39 @@ export interface CIPChartBlock {
 export function getChartBlocksForPreset(
   preset: '1D' | '3D' | '7D' | '30D' | 'Custom',
   days: CIPDayData[],
-  selectedLines: CIPLine[]
+  selectedLines: CIPLine[],
+  viewMode: 'weekly' | 'day' = 'weekly'
 ): CIPChartBlock[] {
   if (preset === '30D') {
-    // 4 weekly blocks matching Figma design 28840:4724
+    if (viewMode === 'day') {
+      // 30 individual daily blocks matching Figma 28918:14272
+      // Days 06/01 through 06/30
+      const dayRates = [
+        60, 68, 65, 75, 76, 70, 65, 72, 80, 80, 75, 74, 85, 86, 82, 70, 78, 72, 68, 62, 70, 85, 75, 88, 78, 77, 45, 62, 85, 76
+      ];
+
+      return Array.from({ length: 30 }, (_, idx) => {
+        const dd = String(idx + 1).padStart(2, '0');
+        const rate = dayRates[idx] || 75;
+        const isFigmaTarget = idx === 9; // 06/10 in Figma
+        const offTime = isFigmaTarget ? 1 : Math.max(2, Math.round((100 - rate) * 0.35));
+        const runs = isFigmaTarget ? 32 : Math.max(12, Math.round(18 + (rate % 14)));
+
+        return {
+          key: `day-30d-${idx}`,
+          label: `06/${dd}`,
+          totalRuns: runs,
+          fullyCompleted: runs,
+          notCompleted: Math.max(0, Math.round(runs * (offTime / 100))),
+          offTimeRate: offTime,
+          onTimeRate: rate,
+          statLabel: 'Fully Completed',
+          statRuns: runs,
+        };
+      });
+    }
+
+    // 4 weekly blocks matching Figma design 28840:4724 & 28918:14272 (zoom out)
     // Week 1: 99% on-time, 32 Runs, 1% off-time
     // Week 2: 80% on-time, 28 Runs, 12% off-time (selected in Figma)
     // Week 3: 78% on-time, 12 Runs, 35% off-time
