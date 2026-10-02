@@ -3,12 +3,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui';
+
+export type AppHeaderVariant = 'default' | 'tv-button';
 
 export interface AppHeaderProps {
   className?: string;
   defaultDept?: string;
   defaultLine?: string;
+  variant?: AppHeaderVariant;
 }
 
 const DEPARTMENTS = [
@@ -29,7 +33,14 @@ export default function AppHeader({
   className = '',
   defaultDept = 'CAN',
   defaultLine = 'G4',
+  variant = 'tv-button',
 }: AppHeaderProps) {
+  const pathname = usePathname();
+  const isTvLine = pathname?.startsWith('/tv/line');
+
+  if (isTvLine) {
+    return null;
+  }
   // State
   const [dept, setDept] = useState(defaultDept);
   const [line, setLine] = useState(defaultLine);
@@ -296,6 +307,19 @@ export default function AppHeader({
             </div>
           )}
         </div>
+
+        {/* TV Mode / Screen Share Icon Button (Variant: tv-button, Figma 29118:603923) */}
+        {variant === 'tv-button' && (
+          <Link
+            href="/tv/line"
+            className={`sfp-header-tv-btn ${isTvLine ? 'active' : ''}`}
+            id="header-tv-btn"
+            title="TV Line View (/tv/line)"
+            aria-label="TV Line View"
+          >
+            <Icon name="screen_share" size="medium" />
+          </Link>
+        )}
 
         {/* Vertical Divider */}
         <div className="sfp-header-vdivider" />

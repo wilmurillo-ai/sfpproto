@@ -33,7 +33,7 @@ export default function RootLayout({
       </head>
       <body>
         <div className="app-shell">
-          <AppHeader />
+          <AppHeader variant="tv-button" />
           <div className="app-body">
             {/* Sidebar hidden for now */}
             {/* <Sidebar /> */}
