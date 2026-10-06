@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui';
+import TVMonitorModal from './TVMonitorModal';
 
 export type AppHeaderVariant = 'default' | 'tv-button';
 
@@ -36,9 +37,10 @@ export default function AppHeader({
   variant = 'tv-button',
 }: AppHeaderProps) {
   const pathname = usePathname();
+  const isTv = pathname?.startsWith('/tv');
   const isTvLine = pathname?.startsWith('/tv/line');
 
-  if (isTvLine) {
+  if (isTv) {
     return null;
   }
   // State
@@ -48,6 +50,7 @@ export default function AppHeader({
   const [lineMenuOpen, setLineMenuOpen] = useState(false);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [tvModalOpen, setTvModalOpen] = useState(false);
 
   // Time & Shift state
   const [currentTime, setCurrentTime] = useState('10:50');
@@ -308,17 +311,30 @@ export default function AppHeader({
           )}
         </div>
 
-        {/* TV Mode / Screen Share Icon Button (Variant: tv-button, Figma 29118:603923) */}
+        {/* TV Mode / Screen Share Icon Button (Variant: tv-button, Figma 29118:603923 & Modal 29193:14821) */}
         {variant === 'tv-button' && (
-          <Link
-            href="/tv/line"
-            className={`sfp-header-tv-btn ${isTvLine ? 'active' : ''}`}
-            id="header-tv-btn"
-            title="TV Line View (/tv/line)"
-            aria-label="TV Line View"
-          >
-            <Icon name="screen_share" size="medium" />
-          </Link>
+          <>
+            <button
+              type="button"
+              onClick={() => setTvModalOpen(true)}
+              className={`sfp-header-tv-btn ${isTv ? 'active' : ''}`}
+              id="header-tv-btn"
+              data-testid="header-tb-btn"
+              title="TV Monitor"
+              aria-label="TV Monitor"
+            >
+              <Icon name="screen_share" size="medium" />
+            </button>
+            {/* Alias button supporting #header-tb-btn */}
+            <button
+              type="button"
+              id="header-tb-btn"
+              onClick={() => setTvModalOpen(true)}
+              style={{ display: 'none' }}
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+          </>
         )}
 
         {/* Vertical Divider */}
@@ -402,6 +418,12 @@ export default function AppHeader({
           )}
         </div>
       </div>
+
+      {/* TV Monitor Selection Modal (Figma node 29193:14821) */}
+      <TVMonitorModal
+        isOpen={tvModalOpen}
+        onClose={() => setTvModalOpen(false)}
+      />
     </header>
   );
 }
