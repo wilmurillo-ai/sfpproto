@@ -263,6 +263,10 @@
   --data-viz-qualitative-04:         #d7ac01;
   --data-viz-qualitative-05:         #c12c01;
   --data-viz-qualitative-06:         #5c4ec9;
+  --pink-400:                        #ea397a;
+  --teal-350:                        #00a396;
+  --purple-400:                      #9f75e8;
+  --orange-400:                      #e78710;
 
   /* Overlay & Shadows */
   --color-overlay:                   rgba(0, 0, 0, 0.7);
@@ -5320,15 +5324,15 @@ img, svg { display: block; }
   margin: 0;
 }
 
-/* ── Unified Funnel Dropdown Bar (Figma 28930:56946 / 28930:57208) ── */
-.cip-funnel-dropdown-bar {
+/* ── Unified Funnel Tabs Component (CIP Line, Target, Context, Phases - Figma 28930:57208) ── */
+.cip-funnel-dropdown-bar.cip-tabs-filter-bar {
   display: inline-flex;
   align-items: center;
   background: #262626;
   border: 1px solid #333338;
   border-radius: 10px;
-  height: 64px;
-  padding: 5px;
+  height: 60px;
+  padding: 4px;
   box-shadow: none;
   box-sizing: border-box;
 }
@@ -5336,7 +5340,9 @@ img, svg { display: block; }
 .cip-funnel-segment {
   display: flex;
   align-items: center;
-  height: 54px;
+  flex: 1;
+  min-width: 0;
+  height: 50px;
   background: #2D2D2D;
   color: #ffffff;
   cursor: pointer;
@@ -5347,87 +5353,126 @@ img, svg { display: block; }
 }
 
 .cip-funnel-segment.is-first {
-  padding: 0 24px 0 20px;
-  clip-path: polygon(6px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 6px 100%, 0% calc(100% - 6px), 0% 6px);
-  z-index: 3;
+  padding: 0 16px 0 12px;
+  clip-path: polygon(6px 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 6px 100%, 0% calc(100% - 6px), 0% 6px);
+  z-index: 4;
 }
 
 .cip-funnel-segment.is-middle {
   margin-left: -8px;
-  padding: 0 24px 0 26px;
-  clip-path: polygon(0% 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%, 12px 50%);
+  padding: 0 14px 0 18px;
+  clip-path: polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%, 10px 50%);
+  z-index: 3;
+}
+
+.cip-funnel-segment:nth-child(3) {
   z-index: 2;
 }
 
 .cip-funnel-segment.is-last {
   margin-left: -8px;
-  padding: 0 20px 0 26px;
-  clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0% 100%, 12px 50%);
+  padding: 0 12px 0 18px;
+  clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0% 100%, 10px 50%);
   z-index: 1;
 }
 
 .cip-funnel-segment:hover {
-  background: #35353c;
-}
-
-.cip-funnel-segment.is-open {
-  background: #3a3a42;
+  background: #36363d;
 }
 
 .cip-funnel-segment.is-filtered {
   background: #043257;
 }
 
-.cip-funnel-seg-label {
-  font-size: 14px;
-  color: #c0c0c8;
-  font-weight: 500;
-  margin-right: 8px;
+.cip-funnel-segment.is-active-tab {
+  background: #025399;
+  box-shadow: inset 0 -2px 0 #7db3fc;
 }
 
-.cip-funnel-segment.is-filtered .cip-funnel-seg-label {
-  color: rgba(255, 255, 255, 0.85);
+/* Level-specific active tab themes */
+.cip-funnel-segment[data-level="line"].is-active-tab {
+  background: #331c28;
+  box-shadow: inset 0 -3px 0 var(--pink-400, #ea397a);
+}
+.cip-funnel-segment[data-level="line"].is-active-tab .cip-funnel-seg-label {
+  color: #ff9ec4;
+}
+
+.cip-funnel-segment[data-level="target"].is-active-tab {
+  background: #142a28;
+  box-shadow: inset 0 -3px 0 var(--teal-350, #00a396);
+}
+.cip-funnel-segment[data-level="target"].is-active-tab .cip-funnel-seg-label {
+  color: #5eead4;
+}
+
+.cip-funnel-segment[data-level="context"].is-active-tab {
+  background: #261c33;
+  box-shadow: inset 0 -3px 0 var(--purple-400, #9f75e8);
+}
+.cip-funnel-segment[data-level="context"].is-active-tab .cip-funnel-seg-label {
+  color: #d8b4fe;
+}
+
+.cip-funnel-segment[data-level="phase"].is-active-tab {
+  background: #332213;
+  box-shadow: inset 0 -3px 0 var(--orange-400, #e78710);
+}
+.cip-funnel-segment[data-level="phase"].is-active-tab .cip-funnel-seg-label {
+  color: #fdba74;
+}
+
+.cip-funnel-seg-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cip-funnel-seg-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #9e9ea6;
+  margin-bottom: 2px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .cip-funnel-seg-val {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   color: #ffffff;
-}
-
-.cip-funnel-caret {
-  color: #9e9ea6;
-  margin-left: 4px;
-  font-size: 18px;
-  transition: transform 0.15s ease;
-}
-
-.cip-funnel-segment.is-open .cip-funnel-caret {
-  transform: rotate(180deg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 68px;
 }
 
 .cip-funnel-clear-btn {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.16);
   border: none;
   color: #ffffff;
   padding: 2px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  border-radius: 4px;
+  border-radius: 9999px;
   transition: background 0.15s ease;
-  margin-left: 6px;
+  margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .cip-funnel-clear-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.32);
 }
 
 .cip-funnel-divider {
   display: none;
 }
 
-/* ── Deviations Distribution Body Layout ── */
+/* ── Deviations Distribution Body Layout (Filters LEFT, Chart RIGHT - Figma 28918:14272) ── */
 .cip-deviations-body-layout {
   display: flex;
   gap: 24px;
@@ -5436,75 +5481,79 @@ img, svg { display: block; }
   margin-top: 14px;
 }
 
-.cip-deviations-body-layout.has-panel-open .cip-actual-deviation-chart {
+/* ── Deviations Filters Column (Whole filters component aligned to the LEFT of the chart) ── */
+.cip-deviations-filters-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 480px;
+  flex-shrink: 0;
+}
+
+.cip-deviations-filters-column .cip-funnel-dropdown-bar.cip-tabs-filter-bar {
+  width: 100%;
+  display: flex;
+}
+
+.cip-deviations-filters-column .cip-drilldown-panel {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.cip-deviations-body-layout .cip-actual-deviation-chart {
   flex: 1;
   min-width: 0;
 }
 
-/* ── Drilldown Side Panel (Figma 28930:57206) ── */
+/* ── Filters Component (Left Side Panel) ── */
 .cip-drilldown-panel {
-  width: 426px;
-  flex-shrink: 0;
+  width: 100%;
   background: var(--color-background-layer-02, #262626);
   border: 1px solid #333338;
   border-radius: 12px;
   padding: 18px 20px;
-  animation: cipSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes cipSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .cip-drilldown-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .cip-drilldown-panel-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
 }
 
-.cip-drilldown-close-panel {
-  background: transparent;
-  border: none;
-  color: #8e8e93;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-}
-
-.cip-drilldown-close-panel:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .cip-drilldown-items-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cip-drilldown-items-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.cip-drilldown-items-list::-webkit-scrollbar-thumb {
+  background: #3a3a44;
+  border-radius: 4px;
 }
 
 .cip-drilldown-item-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 16px;
+  gap: 7px;
+  padding: 12px 14px;
   border-radius: 8px;
   background: #202024;
   border: 1px solid #2a2a2e;
@@ -5515,13 +5564,40 @@ img, svg { display: block; }
 }
 
 .cip-drilldown-item-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: #24242a;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: #25252c;
+  transform: translateY(-1px);
 }
 
 .cip-drilldown-item-card.is-selected {
   border: 1.5px solid #4484f4;
-  background: rgba(68, 132, 244, 0.08);
+  background: rgba(68, 132, 244, 0.12);
+  box-shadow: 0 0 10px rgba(68, 132, 244, 0.18);
+}
+
+/* Level-specific selected card states */
+.cip-drilldown-item-card[data-level="line"].is-selected {
+  border: 1.5px solid var(--pink-400, #ea397a);
+  background: rgba(234, 57, 122, 0.12);
+  box-shadow: 0 0 10px rgba(234, 57, 122, 0.2);
+}
+
+.cip-drilldown-item-card[data-level="target"].is-selected {
+  border: 1.5px solid var(--teal-350, #00a396);
+  background: rgba(0, 163, 150, 0.12);
+  box-shadow: 0 0 10px rgba(0, 163, 150, 0.2);
+}
+
+.cip-drilldown-item-card[data-level="context"].is-selected {
+  border: 1.5px solid var(--purple-400, #9f75e8);
+  background: rgba(159, 117, 232, 0.12);
+  box-shadow: 0 0 10px rgba(159, 117, 232, 0.2);
+}
+
+.cip-drilldown-item-card[data-level="phase"].is-selected {
+  border: 1.5px solid var(--orange-400, #e78710);
+  background: rgba(231, 135, 16, 0.12);
+  box-shadow: 0 0 10px rgba(231, 135, 16, 0.2);
 }
 
 .cip-drilldown-item-top {
@@ -5538,12 +5614,12 @@ img, svg { display: block; }
 
 .cip-drilldown-item-pct {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffffff;
 }
 
 .cip-drilldown-progress-track {
-  height: 8px;
+  height: 7px;
   border-radius: 9999px;
   background: #2a2a2e;
   overflow: hidden;
@@ -5552,7 +5628,7 @@ img, svg { display: block; }
 .cip-drilldown-progress-fill {
   height: 100%;
   border-radius: 9999px;
-  background: #ea397a; /* Pink/magenta accent from Figma 28930:57206 */
+  background: #ea397a; /* Default fallback */
   transition: width 0.3s ease;
 }
 
