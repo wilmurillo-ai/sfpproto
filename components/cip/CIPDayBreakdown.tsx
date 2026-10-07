@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Icon } from '@/components/ui';
 import { CIPChartBlock, CIPLine } from './mockData';
 import { CIPKPIKey } from './CIPKPIStrip';
+import CIPRootCauseModal from './CIPRootCauseModal';
 
 interface CIPDayBreakdownProps {
   blocks: CIPChartBlock[];
@@ -68,6 +69,15 @@ export default function CIPDayBreakdown({
 
   // Active tab in the filter component ('line' | 'target' | 'context' | 'phase')
   const [activeTab, setActiveTab] = useState<DrilldownLevel>('line');
+
+  // Root cause details modal state (Figma 29354:1294240)
+  const [selectedRootCause, setSelectedRootCause] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  const handleOpenRootCause = (elementName: string) => {
+    setSelectedRootCause(elementName);
+    setIsModalOpen(true);
+  };
 
   // Currently active trend chart block (day or week)
   const activeBlock: CIPChartBlock | null = useMemo(() => {
@@ -774,7 +784,15 @@ export default function CIPDayBreakdown({
 
               {/* Pareto Bars colored by active level (Pink 400 for Line, Teal 350 for Target, etc.) */}
               {renderedBars.map((b) => (
-                <g key={b.name} className="cip-deviation-bar-group">
+                <g
+                  key={b.name}
+                  className="cip-deviation-bar-group is-clickable"
+                  onClick={() => handleOpenRootCause(b.name)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View root cause details for ${b.name}`}
+                >
+                  <title>{`Click to view root cause analysis for ${b.name}`}</title>
                   <rect
                     x={b.barX}
                     y={b.barY}
@@ -792,6 +810,7 @@ export default function CIPDayBreakdown({
                     fontWeight="500"
                     fill="#a0a0a8"
                     fontFamily="Inter, sans-serif"
+                    className="cip-deviation-bar-label"
                   >
                     {b.name}
                   </text>
@@ -843,6 +862,18 @@ export default function CIPDayBreakdown({
           </div>
         </div>
       </div>
+
+      {/* ── Root Cause Details Modal (Figma 29354:1294240) ── */}
+      <CIPRootCauseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        elementName={selectedRootCause}
+        activeLine={selectedLine !== 'All' ? selectedLine : 'CIP L3'}
+        activeTarget={selectedTarget !== 'All' ? selectedTarget : 'MIX 02'}
+        activeContext={selectedContext !== 'All' ? selectedContext : 'Caustic A'}
+        activePhase={selectedPhase !== 'All' ? selectedPhase : 'Caustic Wash'}
+        levelColor={activeLevelConfig.color}
+      />
     </div>
   );
 }

@@ -5703,3 +5703,310 @@ img, svg { display: block; }
   color: var(--blue-300, #93c3ff);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   CIP Root Cause Details Modal (Figma 29354:1294240)
+   ───────────────────────────────────────────────────────────── */
+
+.cip-deviation-bar-group.is-clickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.cip-deviation-bar-group.is-clickable:hover .cip-deviation-rect {
+  filter: brightness(1.25);
+}
+
+.cip-deviation-bar-group.is-clickable:hover .cip-deviation-bar-label {
+  fill: #ffffff;
+  font-weight: 600;
+}
+
+.cip-deviation-bar-group.is-clickable:focus-visible .cip-deviation-rect {
+  stroke: #ffffff;
+  stroke-width: 2px;
+}
+
+.cip-root-cause-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: cipModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cipModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cipModalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.cip-root-cause-modal {
+  width: 604px;
+  max-width: calc(100vw - 32px);
+  min-height: 480px;
+  background: var(--color-background-layer-02, #212121);
+  border: 1px solid var(--color-border-default, #38383a);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: cipModalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Header */
+.cip-rc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.cip-rc-header-title-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.cip-rc-header-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cip-rc-header-subtitle {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #8e8e93;
+  margin: 0;
+}
+
+.cip-rc-close-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-default, #3a3a3c);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.cip-rc-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Secondary Tabs */
+.cip-rc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cip-rc-tab-item {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #838383;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cip-rc-tab-item:hover:not(.is-active) {
+  color: #ffffff;
+}
+
+.cip-rc-tab-item.is-active {
+  background: #333333;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Tab 1: Summary */
+.cip-rc-summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.cip-rc-metric-card {
+  width: 211px;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.cip-rc-metric-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #8e8e93;
+}
+
+.cip-rc-metric-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 40px;
+  color: #ffffff;
+}
+
+/* Tab 2: Locations */
+.cip-rc-locations-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.cip-rc-location-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cip-rc-loc-left {
+  width: 219px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cip-rc-loc-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #ffffff;
+}
+
+.cip-rc-loc-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #8e8e93;
+}
+
+.cip-rc-loc-right {
+  width: 215px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #ffffff;
+}
+
+.cip-rc-loc-line {
+  color: #ffffff;
+}
+
+.cip-rc-loc-lost {
+  color: #ffffff;
+}
+
+/* Tab 3: Actions */
+.cip-rc-actions-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.cip-rc-action-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cip-rc-act-timeframe {
+  width: 80px;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  color: #ffffff;
+}
+
+.cip-rc-act-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cip-rc-act-category {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #ffffff;
+}
+
+.cip-rc-act-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #8e8e93;
+}
+
+
