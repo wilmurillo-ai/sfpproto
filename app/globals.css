@@ -6009,4 +6009,735 @@ img, svg { display: block; }
   color: #8e8e93;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   CIP Day Breakdown Refactor (Figma 29232:37634 / 29327:41727)
+   ───────────────────────────────────────────────────────────── */
+
+.cip-day-breakdown-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+/* ── 1. Header (Date + Total Overrun + 3 Status Tabs) ── */
+.cip-v2-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.cip-v2-header-date-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.cip-v2-date-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cip-v2-overrun-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.cip-v2-overrun-label {
+  color: #8e8e93;
+  font-weight: 500;
+}
+
+.cip-v2-overrun-val {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.cip-v2-status-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cip-v2-status-tab-btn {
+  width: 154px;
+  height: 68px;
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.cip-v2-status-tab-btn:hover:not(.is-active) {
+  background: #242428;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.cip-v2-status-tab-btn.is-active {
+  background: #04172e;
+  border: 1.5px solid #0066cc;
+  box-shadow: 0 0 0 1px #0066cc;
+}
+
+.cip-v2-tab-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e5e5ea;
+}
+
+.cip-v2-tab-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.cip-v2-tab-metric {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-v2-warn-icon {
+  color: #ffd600 !important;
+  font-size: 18px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 2. Macro Filter (Level A Tabs + Level B Drilldown - Figma 29416:7281) ── */
+.cip-v2-macro-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  margin-top: 18px;
+  margin-bottom: 24px;
+}
+
+/* Level A: Segmented Category Tabs & Reset All Button (Figma 29416:7302) */
+.cip-v2-macro-level-a {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -1px;
+}
+
+.cip-v2-macro-a-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  background: #1c1c1e;
+  border: 1px solid var(--color-border-default, #404040);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+  height: 50px;
+}
+
+.cip-v2-macro-a-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 22px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.cip-v2-macro-a-tab.is-last {
+  border-right: none;
+}
+
+.cip-v2-macro-a-tab:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.cip-v2-macro-a-tab.is-active {
+  background: #0b3c78;
+  color: #ffffff;
+}
+
+.cip-v2-macro-a-label {
+  color: #8e8e93;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.cip-v2-macro-a-tab.is-active .cip-v2-macro-a-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cip-v2-macro-a-val {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.cip-v2-macro-a-chevron {
+  color: #8e8e93;
+  margin-left: 2px;
+  transition: color 0.15s ease;
+}
+
+.cip-v2-macro-a-tab.is-active .cip-v2-macro-a-chevron {
+  color: #ffffff;
+}
+
+.cip-v2-macro-reset-all-btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #1c1c1e;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-bottom: 6px;
+}
+
+.cip-v2-macro-reset-all-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Level B: Drilldown Options Horizontal Scroll & Cards (Figma 29232:38141) */
+.cip-v2-macro-level-b-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.cip-v2-macro-level-b-scroll {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-default, #404040);
+  border-radius: 0 24px 24px 24px;
+  background: #1c1c1e;
+  cursor: grab;
+  user-select: none;
+}
+
+.cip-v2-macro-level-b-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cip-v2-macro-b-all-btn {
+  height: 56px;
+  padding: 0 24px;
+  border-radius: 28px;
+  background: #242426;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.cip-v2-macro-b-all-btn:hover {
+  background: #2c2c30;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.cip-v2-macro-b-all-btn.is-active {
+  background: #0b3c78;
+  border-color: #0b3c78;
+  color: #ffffff;
+}
+
+.cip-v2-macro-b-card {
+  width: 176px;
+  min-width: 160px;
+  height: 56px;
+  background: #242426;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.cip-v2-macro-b-card:hover {
+  background: #2c2c30;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.cip-v2-macro-b-card.is-selected {
+  border-color: #0b3c78;
+  background: #19273c;
+  box-shadow: 0 0 0 1px #0b3c78;
+}
+
+.cip-v2-macro-b-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.cip-v2-macro-b-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-v2-macro-b-card-pct {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8e8e93;
+}
+
+.cip-v2-macro-b-card.is-selected .cip-v2-macro-b-card-pct {
+  color: #ffffff;
+}
+
+.cip-v2-macro-b-card-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cip-v2-macro-b-card-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.cip-v2-macro-scroll-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(30, 30, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.cip-v2-macro-scroll-arrow.is-left {
+  left: 6px;
+}
+
+.cip-v2-macro-scroll-arrow.is-right {
+  right: 6px;
+}
+
+.cip-v2-macro-scroll-arrow:hover {
+  background: #323238;
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-50%) scale(1.06);
+}
+
+/* ── 3. Cause Breakdown & Side-Panel (Figma 29327:41727) ── */
+.cip-v2-causebreakdown-box {
+  width: 100%;
+  min-height: 540px;
+  background: #1c1c1e;
+  border: 1px solid var(--color-border-default, #38383a);
+  border-radius: 12px;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Left Column: Causes Vertical Stack */
+.cip-v2-causes-col {
+  flex: 1.4;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.cip-v2-causes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cip-v2-causes-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cip-v2-causes-list-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Vertical reference line crossing through all bars */
+.cip-v2-ref-line-overlay {
+  position: absolute;
+  top: -18px;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cip-v2-ref-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fe937a;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.cip-v2-ref-line {
+  width: 1px;
+  flex: 1;
+  background: #fe937a;
+  opacity: 0.85;
+}
+
+.cip-v2-causes-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.cip-v2-cause-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 16px;
+  outline: none;
+}
+
+.cip-v2-cause-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cip-v2-cause-row.is-selected {
+  border-color: #0662c4;
+  background: rgba(6, 98, 196, 0.12);
+}
+
+.cip-v2-cause-label-box {
+  width: 143px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cip-v2-cause-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cip-v2-cause-subtext {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #8e8e93;
+}
+
+.cip-v2-cause-bar-track {
+  flex: 1;
+  height: 63px;
+  background: #28282b;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cip-v2-cause-bar-fill {
+  height: 100%;
+  background: #0662c4;
+  border-radius: 8px 0 0 8px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.cip-v2-cause-chevron {
+  color: #8e8e93;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Right Column: Side-Panel */
+.cip-v2-sidepanel-col {
+  flex: 1;
+  border-left: 1px solid var(--color-border-default, #38383a);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #1c1c1e;
+  box-sizing: border-box;
+}
+
+.cip-v2-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cip-v2-panel-title {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cip-v2-panel-subtitle {
+  font-family: var(--typography-font-family-heading, 'Inter', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #8e8e93;
+  margin: 0;
+}
+
+.cip-v2-panel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cip-v2-panel-tab-item {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #838383;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cip-v2-panel-tab-item:hover:not(.is-active) {
+  color: #ffffff;
+}
+
+.cip-v2-panel-tab-item.is-active {
+  background: #333333;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Tab 1: Summary */
+.cip-v2-panel-summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  width: 100%;
+}
+
+.cip-v2-panel-metric-card {
+  width: 50%;
+  min-width: 170px;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cip-v2-panel-metric-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: #8e8e93;
+}
+
+.cip-v2-panel-metric-val {
+  font-family: 'Inter', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 40px;
+  color: #ffffff;
+}
+
+/* Tab 2: Locations */
+.cip-v2-panel-locations-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cip-v2-panel-loc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cip-v2-panel-loc-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.cip-v2-panel-loc-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-v2-panel-loc-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #8e8e93;
+}
+
+.cip-v2-panel-loc-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #ffffff;
+}
+
+.cip-v2-panel-loc-line {
+  color: #ffffff;
+}
+
+.cip-v2-panel-loc-time {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Tab 3: Actions */
+.cip-v2-panel-actions-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cip-v2-panel-act-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cip-v2-panel-act-timeframe {
+  width: 75px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.cip-v2-panel-act-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cip-v2-panel-act-category {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cip-v2-panel-act-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #8e8e93;
+  line-height: 18px;
+}
+
+
 

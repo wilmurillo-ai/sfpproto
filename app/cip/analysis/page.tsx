@@ -4,7 +4,6 @@ import React, { useState, useMemo } from 'react';
 import {
   CIPDateRange,
   CIPLineSelector,
-  CIPKPIStrip,
   CIPDaySelector,
   CIPDayBreakdown,
   CIPDateRangeValue,
@@ -122,9 +121,6 @@ export default function CIPAnalysisPage() {
             <CIPLineSelector selectedLines={selectedLines} onChange={setSelectedLines} />
           </div>
         </div>
-
-        {/* ── KPI Strip (4 cards) ── */}
-        <CIPKPIStrip summary={summary} activeKPI={activeKPI} onSelectKPI={setActiveKPI} />
 
         {/* ── Trend Chart Section with Subtitle & Zoom Controls ── */}
         <CIPDaySelector
