@@ -117,9 +117,10 @@ export default function CIPAnalysisPage() {
           <div className="cip-analysis-controls-left">
             <CIPDateRange value={dateRange} onChange={handleDateChange} />
           </div>
-          <div className="cip-analysis-controls-right">
+          {/* Line selector hidden for now matching design */}
+          {/* <div className="cip-analysis-controls-right">
             <CIPLineSelector selectedLines={selectedLines} onChange={setSelectedLines} />
-          </div>
+          </div> */}
         </div>
 
         {/* ── Trend Chart Section with Subtitle & Zoom Controls ── */}

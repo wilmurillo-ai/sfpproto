@@ -4,7 +4,10 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Icon } from '@/components/ui';
 import { CIPChartBlock, CIPLine } from './mockData';
 import { CIPKPIKey } from './CIPKPIStrip';
-import { ROOT_CAUSE_DETAILS, RootCauseTab, RootCauseDetailData } from './CIPRootCauseModal';
+import CIPRootCauseModal, {
+  AlertBreakdownData,
+  getAlertsForCause,
+} from './CIPRootCauseModal';
 
 interface CIPDayBreakdownProps {
   blocks: CIPChartBlock[];
@@ -14,7 +17,8 @@ interface CIPDayBreakdownProps {
 }
 
 export type StatusFilterType = 'completed' | 'on-time' | 'off-target';
-export type MacroCategory = 'line' | 'target' | 'context' | 'phase';
+export type MacroCategory = 'line' | 'target' | 'context';
+export type DeviationMode = 'totals' | 'ramp-up' | 'skipped';
 
 interface MacroFilterItem {
   id: string;
@@ -28,7 +32,24 @@ interface CauseItem {
   lostMinutes: number;
   pct: number;
   subtext: string;
+  rampMinutes?: number;
+  skipCount?: number;
 }
+
+const CAUSE_DESCRIPTIONS: Record<string, string> = {
+  'Temp Ramp': 'Thermal ramp rate failed to reach the required thermal target within expected timeframe across multiple wash cycles, causing cycle extension.',
+  'Water Q': 'Water conductivity and rinse turbidity exceeded baseline tolerances, requiring extended pre-rinse purges to reach required specification.',
+  'Elbow 12': 'Hydraulic flow turbulence and differential pressure drop detected across elbow EL-12, reducing scouring velocity.',
+  'Chemicals': 'Chemical concentration titration delayed due to dosing pump slip and valve lag during chemical recirculation phases.',
+  'Valve Switch': 'Actuator transition latency detected on manifold block diverter valves, extending phase change intervals.',
+  'Flow Rate': 'Delivery flow rate fell below turbulence scouring threshold, extending run time to achieve equivalent cleaning action.',
+  'Pre-Rinse': 'Initial turbidity purge cycle exceeded target duration due to residual heavy soil load.',
+  'Sensor Check': 'Conductivity and optical sensor signal verification handshake delayed loop start.',
+  'Heat Exchanger Fouling': 'Thermal transfer coefficient degradation across plate pack causing severe ramp delays.',
+  'Acid Dosing Fault': 'Concentration titration failed to stabilize within tolerance, requiring automated corrective pulses.',
+  'Pressure Drop L3': 'Excess hydraulic line resistance across line segment 3 triggering protective flow back-off.',
+  'Drain Blockage': 'Gravity scavenge return line drainage velocity restricted, extending sump clearing interval.',
+};
 
 export default function CIPDayBreakdown({
   blocks,
@@ -37,18 +58,23 @@ export default function CIPDayBreakdown({
   // ── Level 2: Status Filter Tabs (Fully Completed, On-Time, Off-Target) ──
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('completed');
 
-  // ── Filter Macro Level A: Active Category Tab ──
+  // ── Filter Macro Level A: Active Category Tab (Context is now last) ──
   const [activeCategory, setActiveCategory] = useState<MacroCategory>('line');
 
   // ── Selected Filter Values for each category ──
   const [selectedLine, setSelectedLine] = useState<string>('All');
   const [selectedTarget, setSelectedTarget] = useState<string>('All');
   const [selectedContext, setSelectedContext] = useState<string>('All');
-  const [selectedPhase, setSelectedPhase] = useState<string>('All');
 
-  // ── Level 4: Cause Breakdown & Side Panel States ──
+  // ── Phase Deviation Mode (Totals, Ramp-up, Skipped) ──
+  const [deviationMode, setDeviationMode] = useState<DeviationMode>('totals');
+
+  // ── Selected Cause / Deviation ──
   const [selectedCause, setSelectedCause] = useState<string>('Temp Ramp');
-  const [activeTab, setActiveTab] = useState<RootCauseTab>('summary');
+
+  // ── Modal State for Alert Breakdown ──
+  const [selectedAlertForModal, setSelectedAlertForModal] = useState<AlertBreakdownData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Horizontal Scroll and Drag State for Level B
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -120,7 +146,7 @@ export default function CIPDayBreakdown({
     ];
   }, [selectedLine]);
 
-  // Contexts (Level 3)
+  // Contexts (Level 3 - now last category)
   const contextOptions: MacroFilterItem[] = useMemo(() => {
     if (selectedTarget === 'MIX 01') {
       return [
@@ -136,14 +162,6 @@ export default function CIPDayBreakdown({
       { id: 'Acid Wash A', name: 'Acid Wash A', pct: 50, barColor: '#e34119' },
     ];
   }, [selectedTarget]);
-
-  // Phases (Level 4)
-  const phaseOptions: MacroFilterItem[] = useMemo(() => [
-    { id: 'Pre Rinse', name: 'Pre Rinse', pct: 85, barColor: '#0662c4' },
-    { id: 'Caustic Recirculation', name: 'Caustic Recirculation', pct: 55, barColor: '#e34119' },
-    { id: 'Final Rinse', name: 'Final Rinse', pct: 85, barColor: '#0662c4' },
-    { id: 'Intermediate Rinse', name: 'Intermediate Rinse', pct: 70, barColor: '#0662c4' },
-  ], []);
 
   // Check scroll position to show/hide scroll arrows
   const checkScrollState = useCallback(() => {
@@ -191,169 +209,235 @@ export default function CIPDayBreakdown({
     }
   };
 
-  // ── Color coding based on selected status tab (Blue High, Green Medium, Red) ──
-  const chartColor = useMemo(() => {
-    if (statusFilter === 'completed') return '#0662c4'; // Blue High (Fully Completed)
-    if (statusFilter === 'on-time') return '#30b06b';   // Green Medium (On-Time)
-    return '#e34119';                                   // Red (Off-Target)
-  }, [statusFilter]);
+  // ── SFP Color Tokens for Phase Deviation: Red for totals, Orange for ramp-up, Yellow for skipped ──
+  const phaseDeviationChartColor = useMemo(() => {
+    if (deviationMode === 'ramp-up') return 'var(--orange-400, #e78710)';
+    if (deviationMode === 'skipped') return 'var(--primitive-yellow-350, #d7ac01)';
+    return 'var(--color-feedback-error-high-contrast, #fe7c5f)';
+  }, [deviationMode]);
 
-  // ── Dynamic Causes List & Reference Line (Responds to status tabs & child filters with increasing variance) ──
+  // ── Dynamic Causes Calculation across the 3 Deviation Modes (Totals, Ramp-up, Skipped) ──
   const { causeList, refLineLabel, refLinePct } = useMemo(() => {
-    // Collect all actively selected child filters (ignoring parent 'All')
-    const activeFilters: { key: string; val: string }[] = [];
-    if (selectedLine !== 'All') activeFilters.push({ key: 'line', val: selectedLine });
-    if (selectedTarget !== 'All') activeFilters.push({ key: 'target', val: selectedTarget });
-    if (selectedContext !== 'All') activeFilters.push({ key: 'context', val: selectedContext });
-    if (selectedPhase !== 'All') activeFilters.push({ key: 'phase', val: selectedPhase });
+    // Determine base causes based on statusFilter
+    let items: CauseItem[] = [];
 
-    const filterCount = activeFilters.length;
+    if (statusFilter === 'completed') {
+      items = [
+        { name: 'Water Q', lostMinutes: 30, pct: 50, subtext: '', rampMinutes: 6, skipCount: 3 },
+        { name: 'Temp Ramp', lostMinutes: 23, pct: 38, subtext: '', rampMinutes: 18, skipCount: 1 },
+        { name: 'Elbow 12', lostMinutes: 10, pct: 16, subtext: '', rampMinutes: 3, skipCount: 5 },
+        { name: 'Chemicals', lostMinutes: 10, pct: 16, subtext: '', rampMinutes: 9, skipCount: 2 },
+      ];
+    } else if (statusFilter === 'on-time') {
+      items = [
+        { name: 'Valve Switch', lostMinutes: 14, pct: 42, subtext: '', rampMinutes: 4, skipCount: 2 },
+        { name: 'Flow Rate', lostMinutes: 10, pct: 30, subtext: '', rampMinutes: 8, skipCount: 1 },
+        { name: 'Pre-Rinse', lostMinutes: 6, pct: 18, subtext: '', rampMinutes: 5, skipCount: 3 },
+        { name: 'Sensor Check', lostMinutes: 4, pct: 12, subtext: '', rampMinutes: 2, skipCount: 1 },
+      ];
+    } else {
+      // off-target
+      items = [
+        { name: 'Heat Exchanger Fouling', lostMinutes: 48, pct: 52, subtext: '', rampMinutes: 24, skipCount: 4 },
+        { name: 'Acid Dosing Fault', lostMinutes: 34, pct: 36, subtext: '', rampMinutes: 14, skipCount: 2 },
+        { name: 'Pressure Drop L3', lostMinutes: 18, pct: 20, subtext: '', rampMinutes: 7, skipCount: 6 },
+        { name: 'Drain Blockage', lostMinutes: 12, pct: 14, subtext: '', rampMinutes: 3, skipCount: 3 },
+      ];
+    }
 
-    // RULE 1: If NO child element is selected, display baseline Pareto for the current status tab!
-    if (filterCount === 0) {
-      if (statusFilter === 'completed') {
-        return {
-          refLineLabel: '80% Loss Time',
-          refLinePct: 80,
-          causeList: [
-            { name: 'Water Q', lostMinutes: 30, pct: 50, subtext: '30m (50%)' },
-            { name: 'Temp Ramp', lostMinutes: 23, pct: 38, subtext: '23m (38%)' },
-            { name: 'Elbow 12', lostMinutes: 10, pct: 16, subtext: '10m (16%)' },
-            { name: 'Chemicals', lostMinutes: 10, pct: 16, subtext: '10m (16%)' },
-          ],
-        };
+    // Dynamic multipliers and ranking shifts based on selectedLine
+    if (selectedLine !== 'All') {
+      if (selectedLine === 'CIP 1') {
+        // Line 1 has high heating / steam valve issues
+        items = items.map((c) => {
+          if (c.name === 'Temp Ramp' || c.name === 'Heat Exchanger Fouling' || c.name === 'Flow Rate') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 1.55), rampMinutes: Math.round((c.rampMinutes || 5) * 1.6) };
+          }
+          if (c.name === 'Water Q' || c.name === 'Drain Blockage') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 0.7), skipCount: Math.max(1, (c.skipCount || 2) - 1) };
+          }
+          return { ...c, lostMinutes: Math.round(c.lostMinutes * 0.85) };
+        });
+      } else if (selectedLine === 'CIP 2') {
+        // Line 2 has heavy chemical and elbow friction issues
+        items = items.map((c) => {
+          if (c.name === 'Chemicals' || c.name === 'Acid Dosing Fault') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 1.8), rampMinutes: Math.round((c.rampMinutes || 4) * 1.5) };
+          }
+          if (c.name === 'Elbow 12' || c.name === 'Pressure Drop L3') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 1.7), skipCount: (c.skipCount || 2) + 2 };
+          }
+          return { ...c, lostMinutes: Math.max(3, Math.round(c.lostMinutes * 0.55)) };
+        });
+      } else if (selectedLine === 'CIP 3') {
+        // Line 3 has high water quality / turbidity purge issues
+        items = items.map((c) => {
+          if (c.name === 'Water Q' || c.name === 'Drain Blockage' || c.name === 'Pre-Rinse') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 1.65), skipCount: (c.skipCount || 2) + 2 };
+          }
+          if (c.name === 'Chemicals' || c.name === 'Acid Dosing Fault') {
+            return { ...c, lostMinutes: Math.max(2, Math.round(c.lostMinutes * 0.5)) };
+          }
+          return c;
+        });
+      } else if (selectedLine === 'CIP 4') {
+        // Line 4 has valve switch & elbow restrictions
+        items = items.map((c) => {
+          if (c.name === 'Elbow 12' || c.name === 'Valve Switch' || c.name === 'Pressure Drop L3') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 1.75), skipCount: (c.skipCount || 2) + 3 };
+          }
+          return { ...c, lostMinutes: Math.max(3, Math.round(c.lostMinutes * 0.7)) };
+        });
+      } else if (selectedLine === 'CIP 5') {
+        // Line 5 has temp ramp & flow rate issues
+        items = items.map((c) => {
+          if (c.name === 'Temp Ramp' || c.name === 'Flow Rate' || c.name === 'Heat Exchanger Fouling') {
+            return { ...c, lostMinutes: Math.round(c.lostMinutes * 1.5), rampMinutes: Math.round((c.rampMinutes || 4) * 1.7) };
+          }
+          return { ...c, lostMinutes: Math.max(3, Math.round(c.lostMinutes * 0.75)) };
+        });
       }
-      if (statusFilter === 'on-time') {
-        return {
-          refLineLabel: '85% Loss Time',
-          refLinePct: 85,
-          causeList: [
-            { name: 'Valve Switch', lostMinutes: 14, pct: 42, subtext: '14m (42%)' },
-            { name: 'Flow Rate', lostMinutes: 10, pct: 30, subtext: '10m (30%)' },
-            { name: 'Pre-Rinse', lostMinutes: 6, pct: 18, subtext: '6m (18%)' },
-            { name: 'Sensor Check', lostMinutes: 4, pct: 12, subtext: '4m (12%)' },
-          ],
-        };
+    }
+
+    // Dynamic modulation based on selectedTarget
+    if (selectedTarget !== 'All') {
+      if (selectedTarget === 'MIX 01') {
+        items = items.map((c) => {
+          if (c.name === 'Elbow 12' || c.name === 'Pressure Drop L3') {
+            return { ...c, lostMinutes: c.lostMinutes + 8, skipCount: (c.skipCount || 2) + 2 };
+          }
+          if (c.name === 'Temp Ramp' || c.name === 'Heat Exchanger Fouling') {
+            return { ...c, lostMinutes: c.lostMinutes + 6, rampMinutes: (c.rampMinutes || 4) + 4 };
+          }
+          return c;
+        });
+      } else if (selectedTarget === 'CAN 02') {
+        items = items.map((c) => {
+          if (c.name === 'Chemicals' || c.name === 'Acid Dosing Fault') {
+            return { ...c, lostMinutes: c.lostMinutes + 10, rampMinutes: (c.rampMinutes || 4) + 5 };
+          }
+          if (c.name === 'Water Q') {
+            return { ...c, lostMinutes: c.lostMinutes + 6 };
+          }
+          return c;
+        });
+      } else if (selectedTarget === 'CAN 01') {
+        items = items.map((c) => {
+          if (c.name === 'Temp Ramp' || c.name === 'Heat Exchanger Fouling') {
+            return { ...c, lostMinutes: c.lostMinutes + 12, rampMinutes: (c.rampMinutes || 4) + 6 };
+          }
+          return c;
+        });
+      } else if (selectedTarget === 'SYRUP A' || selectedTarget === 'SYRUP B') {
+        items = items.map((c) => {
+          if (c.name === 'Chemicals' || c.name === 'Acid Dosing Fault') {
+            return { ...c, lostMinutes: c.lostMinutes + 14, rampMinutes: (c.rampMinutes || 4) + 6 };
+          }
+          return c;
+        });
+      } else if (selectedTarget === 'MIX 02' || selectedTarget === 'MIX 03') {
+        items = items.map((c) => {
+          if (c.name === 'Water Q' || c.name === 'Pre-Rinse' || c.name === 'Drain Blockage') {
+            return { ...c, lostMinutes: c.lostMinutes + 10, skipCount: (c.skipCount || 2) + 2 };
+          }
+          return c;
+        });
       }
-      // statusFilter === 'off-target'
+    }
+
+    // Dynamic modulation based on selectedContext
+    if (selectedContext !== 'All') {
+      if (selectedContext === 'Caustic B') {
+        items = items.map((c) => {
+          if (c.name === 'Chemicals' || c.name === 'Acid Dosing Fault') {
+            return { ...c, lostMinutes: c.lostMinutes + 12, rampMinutes: (c.rampMinutes || 4) + 5 };
+          }
+          if (c.name === 'Temp Ramp' || c.name === 'Heat Exchanger Fouling') {
+            return { ...c, lostMinutes: c.lostMinutes + 6, rampMinutes: (c.rampMinutes || 4) + 3 };
+          }
+          return c;
+        });
+      } else if (selectedContext === 'Caustic A') {
+        items = items.map((c) => {
+          if (c.name === 'Temp Ramp' || c.name === 'Heat Exchanger Fouling') {
+            return { ...c, lostMinutes: c.lostMinutes + 15, rampMinutes: (c.rampMinutes || 4) + 7 };
+          }
+          return c;
+        });
+      } else if (selectedContext === 'Sanitize') {
+        items = items.map((c) => {
+          if (c.name === 'Water Q' || c.name === 'Pre-Rinse' || c.name === 'Drain Blockage') {
+            return { ...c, lostMinutes: c.lostMinutes + 14, skipCount: (c.skipCount || 2) + 2 };
+          }
+          return c;
+        });
+      } else if (selectedContext === 'Acid Wash A') {
+        items = items.map((c) => {
+          if (c.name === 'Elbow 12' || c.name === 'Pressure Drop L3') {
+            return { ...c, lostMinutes: c.lostMinutes + 9, skipCount: (c.skipCount || 2) + 2 };
+          }
+          if (c.name === 'Chemicals' || c.name === 'Acid Dosing Fault') {
+            return { ...c, lostMinutes: c.lostMinutes + 7 };
+          }
+          return c;
+        });
+      }
+    }
+
+    // Compute total minutes for percentages
+    const totalMinutes = items.reduce((sum, i) => sum + i.lostMinutes, 0) || 1;
+    items = items.map((i) => ({
+      ...i,
+      pct: Math.min(95, Math.round((i.lostMinutes / totalMinutes) * 100)),
+    }));
+
+    // Re-sort according to deviationMode:
+    if (deviationMode === 'ramp-up') {
+      const sorted = [...items].sort((a, b) => (b.rampMinutes || 0) - (a.rampMinutes || 0));
+      const maxRamp = sorted[0]?.rampMinutes || 1;
+      const rampList: CauseItem[] = sorted.map((item) => {
+        const rampPct = Math.round(((item.rampMinutes || 1) / maxRamp) * 85);
+        return {
+          ...item,
+          pct: rampPct,
+        };
+      });
+      const topRamp = sorted[0]?.rampMinutes || 5;
       return {
-        refLineLabel: '70% Loss Time',
-        refLinePct: 70,
-        causeList: [
-          { name: 'Heat Exchanger Fouling', lostMinutes: 48, pct: 52, subtext: '48m (52%)' },
-          { name: 'Acid Dosing Fault', lostMinutes: 34, pct: 36, subtext: '34m (36%)' },
-          { name: 'Pressure Drop L3', lostMinutes: 18, pct: 20, subtext: '18m (20%)' },
-          { name: 'Drain Blockage', lostMinutes: 12, pct: 14, subtext: '12m (14%)' },
-        ],
+        refLineLabel: `Target Ramp-up: 5m`,
+        refLinePct: Math.min(85, Math.max(25, Math.round((5 / topRamp) * 85))),
+        causeList: rampList,
       };
     }
 
-    // RULE 2: Child element(s) are selected!
-    // Determine 4 distinct causes and primary ranking based on status tab & filters
-    const hasChemicals =
-      selectedLine === 'CIP 2' ||
-      selectedContext === 'Caustic B' ||
-      selectedPhase === 'Detergent Wash';
-    const hasElbow =
-      selectedTarget === 'MIX 01' ||
-      selectedTarget === 'CAN 02' ||
-      selectedContext === 'Acid Wash A';
-    const hasTempRamp =
-      selectedLine === 'CIP 1' ||
-      selectedTarget === 'CAN 01' ||
-      selectedContext === 'Caustic A';
-    const hasWaterQ =
-      selectedPhase === 'Pre Rinse' ||
-      selectedLine === 'CIP 3' ||
-      selectedLine === 'CIP 4' ||
-      selectedTarget === 'MIX 02';
-
-    const allCauses =
-      statusFilter === 'on-time'
-        ? ['Valve Switch', 'Flow Rate', 'Pre-Rinse', 'Sensor Check']
-        : statusFilter === 'off-target'
-        ? ['Heat Exchanger Fouling', 'Acid Dosing Fault', 'Pressure Drop L3', 'Drain Blockage']
-        : ['Water Q', 'Temp Ramp', 'Elbow 12', 'Chemicals'];
-
-    let primary = allCauses[0];
-
-    if (statusFilter === 'completed') {
-      if (hasChemicals) primary = 'Chemicals';
-      else if (hasElbow) primary = 'Elbow 12';
-      else if (hasTempRamp) primary = 'Temp Ramp';
-      else primary = 'Water Q';
-    } else if (statusFilter === 'on-time') {
-      if (hasChemicals) primary = 'Flow Rate';
-      else if (hasElbow) primary = 'Sensor Check';
-      else if (hasWaterQ) primary = 'Pre-Rinse';
-      else primary = 'Valve Switch';
-    } else {
-      if (hasChemicals) primary = 'Acid Dosing Fault';
-      else if (hasElbow) primary = 'Pressure Drop L3';
-      else if (hasWaterQ) primary = 'Drain Blockage';
-      else primary = 'Heat Exchanger Fouling';
+    if (deviationMode === 'skipped') {
+      const sorted = [...items].sort((a, b) => (b.skipCount || 0) - (a.skipCount || 0));
+      const maxSkips = sorted[0]?.skipCount || 1;
+      const skippedList: CauseItem[] = sorted.map((item) => {
+        const skipPct = Math.round(((item.skipCount || 1) / maxSkips) * 85);
+        return {
+          ...item,
+          pct: skipPct,
+        };
+      });
+      const topSkips = sorted[0]?.skipCount || 2;
+      return {
+        refLineLabel: `Tolerance: 2 skips`,
+        refLinePct: Math.min(85, Math.max(30, Math.round((2 / topSkips) * 85))),
+        causeList: skippedList,
+      };
     }
 
-    // Ensure all 4 items are strictly unique and primary is ordered first
-    const remaining = allCauses.filter((c) => c !== primary);
-    const secondary = remaining[0];
-    const tertiary = remaining[1];
-    const quaternary = remaining[2];
-
-    // RULE 3: Scaling Variance!
-    // As MORE filters are selected, variance increases dramatically:
-    // - 1 filter: Moderate variance (pPct ~68%, sPct ~22%, tPct ~10%, qPct ~6%)
-    // - 2 filters: High variance (pPct ~82%, sPct ~14%, tPct ~6%, qPct ~3%)
-    // - 3+ filters: Extreme variance (pPct ~94%, sPct ~5%, tPct ~2%, qPct ~1%)
-    let pPct = 68;
-    let sPct = 22;
-    let tPct = 10;
-    let qPct = 6;
-    let pMin = statusFilter === 'off-target' ? 55 : statusFilter === 'on-time' ? 18 : 30;
-    let sMin = statusFilter === 'off-target' ? 20 : statusFilter === 'on-time' ? 7 : 12;
-    let tMin = statusFilter === 'off-target' ? 8 : statusFilter === 'on-time' ? 3 : 6;
-    let qMin = statusFilter === 'off-target' ? 4 : statusFilter === 'on-time' ? 2 : 4;
-    let refPct = statusFilter === 'off-target' ? 76 : 84;
-
-    if (filterCount === 1) {
-      pPct = 68;
-      sPct = 22;
-      tPct = 10;
-      qPct = 6;
-      refPct = statusFilter === 'off-target' ? 74 : 82;
-    } else if (filterCount === 2) {
-      pPct = 82;
-      sPct = 14;
-      tPct = 6;
-      qPct = 3;
-      pMin = Math.round(pMin * 1.2);
-      sMin = Math.round(sMin * 0.7);
-      tMin = Math.round(tMin * 0.6);
-      qMin = Math.round(qMin * 0.5);
-      refPct = statusFilter === 'off-target' ? 80 : 88;
-    } else {
-      pPct = 94;
-      sPct = 5;
-      tPct = 2;
-      qPct = 1;
-      pMin = Math.round(pMin * 1.35);
-      sMin = Math.round(sMin * 0.4);
-      tMin = Math.round(tMin * 0.3);
-      qMin = Math.round(qMin * 0.25);
-      refPct = statusFilter === 'off-target' ? 86 : 92;
-    }
-
+    // Default: 'totals'
+    const sortedTotals = [...items].sort((a, b) => b.lostMinutes - a.lostMinutes);
+    const topPct = sortedTotals[0]?.pct || 50;
+    const refPct = Math.min(90, Math.max(65, Math.round(topPct * 1.4)));
     return {
       refLineLabel: `${refPct}% Loss Time`,
       refLinePct: refPct,
-      causeList: [
-        { name: primary, lostMinutes: pMin, pct: pPct, subtext: `${pMin}m (${pPct}%)` },
-        { name: secondary, lostMinutes: sMin, pct: sPct, subtext: `${sMin}m (${sPct}%)` },
-        { name: tertiary, lostMinutes: tMin, pct: tPct, subtext: `${tMin}m (${tPct}%)` },
-        { name: quaternary, lostMinutes: qMin, pct: qPct, subtext: `${qMin}m (${qPct}%)` },
-      ],
+      causeList: sortedTotals,
     };
-  }, [statusFilter, selectedLine, selectedTarget, selectedContext, selectedPhase]);
+  }, [statusFilter, selectedLine, selectedTarget, selectedContext, deviationMode]);
 
   // Synchronize selectedCause if it is not present in the current status tab's causes
   useEffect(() => {
@@ -362,79 +446,61 @@ export default function CIPDayBreakdown({
     }
   }, [causeList, selectedCause]);
 
-  // Root cause detail data for selected cause
-  const currentCauseData: RootCauseDetailData = useMemo(() => {
-    const key = selectedCause;
-    if (ROOT_CAUSE_DETAILS[key]) return ROOT_CAUSE_DETAILS[key];
-    if (ROOT_CAUSE_DETAILS[key.replace('-', ' ')]) return ROOT_CAUSE_DETAILS[key.replace('-', ' ')];
+  // Selected cause description (Block 1)
+  const currentCauseDescription = useMemo(() => {
+    return (
+      CAUSE_DESCRIPTIONS[selectedCause] ||
+      `${selectedCause} deviation detected across execution run cycles, resulting in cumulative time loss and phase step prolongation.`
+    );
+  }, [selectedCause]);
 
-    // Rich fallback data for On-Time and Off-Target status tab causes
+  // Selected cause alert metrics (Block 2 - shift removed)
+  const currentMetrics = useMemo(() => {
     const isOffTarget = statusFilter === 'off-target';
     const isOnTime = statusFilter === 'on-time';
+    const activeItem = causeList.find((c) => c.name === selectedCause);
+    const lostTimeStr = activeItem ? `${activeItem.lostMinutes}m` : isOffTarget ? '48m' : isOnTime ? '14m' : '23m';
+
+    const eventsCount = activeItem ? Math.max(1, Math.round(activeItem.lostMinutes / 6)) : isOffTarget ? 6 : 3;
+    const runsCount = Math.max(1, Math.min(eventsCount, Math.round(eventsCount * 0.75)));
 
     return {
-      displayTitle: key,
-      subtitle: 'Root Cause Details',
-      summary: {
-        timeLost: isOffTarget ? '48m' : isOnTime ? '14m' : '26m',
-        occurrences: isOffTarget ? '5' : isOnTime ? '2' : '3',
-        runsAffected: isOffTarget ? '4' : isOnTime ? '2' : '3',
-        worstTime: selectedLine !== 'All' ? selectedLine : 'CIP 2',
-        shift: isOffTarget ? 'S2' : isOnTime ? 'S1' : 'S3',
-      },
-      locations: [
-        {
-          id: 'gen-loc-1',
-          title: `${key} Diagnostic Analysis`,
-          subtitle: selectedPhase !== 'All' ? selectedPhase : 'Caustic Wash',
-          line: selectedLine !== 'All' ? selectedLine : 'CIP 1, CIP 2',
-          lostTime: isOffTarget ? '28m Lost' : isOnTime ? '8m Lost' : '14m Lost',
-        },
-        {
-          id: 'gen-loc-2',
-          title: `Field Sensor & Actuator Loop`,
-          subtitle: selectedPhase !== 'All' ? selectedPhase : 'Pre Rinse',
-          line: selectedLine !== 'All' ? selectedLine : 'CIP 3',
-          lostTime: isOffTarget ? '20m Lost' : isOnTime ? '6m Lost' : '12m Lost',
-        },
-      ],
-      actions: [
-        {
-          id: 'gen-act-1',
-          timeframe: 'NOW',
-          category: isOffTarget ? 'Critical Skid Alert' : 'Operations',
-          description: `Inspect ${key} manifold valves, verify flow transmitters and clear inline restrictions`,
-        },
-        {
-          id: 'gen-act-2',
-          timeframe: 'This Week',
-          category: 'Maintenance',
-          description: `Calibrate pressure transducer loop and verify scheduled descaling protocols for ${key}`,
-        },
-      ],
+      timeLost: lostTimeStr,
+      occurrences: `${eventsCount}`,
+      runsAffected: `${runsCount}`,
+      worstLine: selectedLine !== 'All' ? selectedLine : activeItem?.name === 'Temp Ramp' ? 'CIP 1' : activeItem?.name === 'Chemicals' ? 'CIP 2' : 'CIP 3',
     };
-  }, [selectedCause, statusFilter, selectedLine, selectedPhase]);
+  }, [statusFilter, selectedCause, selectedLine, causeList]);
+
+  // Selected cause alerts table (Block 3)
+  const currentAlerts = useMemo(() => {
+    const minutes = parseInt(currentMetrics.timeLost, 10) || 20;
+    return getAlertsForCause(selectedCause, minutes, phaseDeviationChartColor);
+  }, [selectedCause, currentMetrics.timeLost, phaseDeviationChartColor]);
 
   // ── Handler for Reset All button (Level A) ──
   const handleResetAll = () => {
     setSelectedLine('All');
     setSelectedTarget('All');
     setSelectedContext('All');
-    setSelectedPhase('All');
     setActiveCategory('line');
   };
 
-  // ── Handler for selecting options in Level B ──
+  // ── Handler for selecting options in Level B (with toggle support) ──
   const handleSelectOption = (name: string) => {
     if (activeCategory === 'line') {
-      setSelectedLine(name);
+      setSelectedLine((prev) => (prev === name ? 'All' : name));
     } else if (activeCategory === 'target') {
-      setSelectedTarget(name);
+      setSelectedTarget((prev) => (prev === name ? 'All' : name));
     } else if (activeCategory === 'context') {
-      setSelectedContext(name);
-    } else if (activeCategory === 'phase') {
-      setSelectedPhase(name);
+      setSelectedContext((prev) => (prev === name ? 'All' : name));
     }
+  };
+
+  // ── Handler for opening alert modal ──
+  const handleOpenAlertModal = (alert: AlertBreakdownData) => {
+    setSelectedAlertForModal(alert);
+    setIsModalOpen(true);
   };
 
   return (
@@ -463,7 +529,7 @@ export default function CIPDayBreakdown({
             <div className="cip-v2-tab-metric">32 Runs</div>
           </button>
 
-          {/* Tab 2: On-Time (with warning attention icon on metric row) */}
+          {/* Tab 2: On-Time */}
           <button
             type="button"
             className={`cip-v2-status-tab-btn ${statusFilter === 'on-time' ? 'is-active' : ''}`}
@@ -490,9 +556,9 @@ export default function CIPDayBreakdown({
         </div>
       </div>
 
-      {/* ── 2. MACRO FILTER COMPONENT (Level A & Level B - Figma 29416:7281) ── */}
+      {/* ── 2. MACRO FILTER COMPONENT (Line, Target, Context - Phases removed, Context is last) ── */}
       <div className="cip-v2-macro-filter-container" data-node-id="29416:7281">
-        {/* Filter Macro Level A (Category Tabs + Reset All - Figma 29416:7302) */}
+        {/* Filter Macro Level A (Category Tabs + Reset All) */}
         <div className="cip-v2-macro-level-a" data-node-id="29416:7302">
           {/* Segmented Category Tabs */}
           <div className="cip-v2-macro-a-tabs" data-node-id="29416:7257">
@@ -520,27 +586,15 @@ export default function CIPDayBreakdown({
               <Icon name="arrow_drop_down" size="medium" className="cip-v2-macro-a-chevron" />
             </button>
 
-            {/* Tab 3: Context */}
+            {/* Tab 3: Context (Last of list) */}
             <button
               type="button"
-              className={`cip-v2-macro-a-tab ${activeCategory === 'context' ? 'is-active' : ''}`}
+              className={`cip-v2-macro-a-tab is-last ${activeCategory === 'context' ? 'is-active' : ''}`}
               onClick={() => setActiveCategory('context')}
               data-node-id="29416:7266"
             >
               <span className="cip-v2-macro-a-label">Context:</span>
               <span className="cip-v2-macro-a-val">{selectedContext}</span>
-              <Icon name="arrow_drop_down" size="medium" className="cip-v2-macro-a-chevron" />
-            </button>
-
-            {/* Tab 4: Phase */}
-            <button
-              type="button"
-              className={`cip-v2-macro-a-tab is-last ${activeCategory === 'phase' ? 'is-active' : ''}`}
-              onClick={() => setActiveCategory('phase')}
-              data-node-id="29416:7271"
-            >
-              <span className="cip-v2-macro-a-label">Phase:</span>
-              <span className="cip-v2-macro-a-val">{selectedPhase}</span>
               <Icon name="arrow_drop_down" size="medium" className="cip-v2-macro-a-chevron" />
             </button>
           </div>
@@ -556,9 +610,8 @@ export default function CIPDayBreakdown({
           </button>
         </div>
 
-        {/* Filter Macro Level B (Drilldown Options + Horizontal Drag/Scroll + Arrows - Figma 29232:38141) */}
+        {/* Filter Macro Level B (Drilldown Options) */}
         <div className="cip-v2-macro-level-b-wrapper" data-node-id="29232:38141">
-          {/* Scroll Left Button */}
           {canScrollLeft && (
             <button
               type="button"
@@ -570,7 +623,6 @@ export default function CIPDayBreakdown({
             </button>
           )}
 
-          {/* Horizontally scrollable & draggable container */}
           <div
             ref={scrollRef}
             className="cip-v2-macro-level-b-scroll"
@@ -580,18 +632,15 @@ export default function CIPDayBreakdown({
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
           >
-            {/* Category: Line Options */}
             {activeCategory === 'line' && (
               <>
                 <button
                   type="button"
                   className={`cip-v2-macro-b-all-btn ${selectedLine === 'All' ? 'is-active' : ''}`}
                   onClick={() => handleSelectOption('All')}
-                  data-node-id="29232:38142"
                 >
                   All CIP Lines
                 </button>
-
                 {lineOptions.map((opt) => (
                   <button
                     key={opt.id}
@@ -606,10 +655,7 @@ export default function CIPDayBreakdown({
                     <div className="cip-v2-macro-b-card-track">
                       <div
                         className="cip-v2-macro-b-card-fill"
-                        style={{
-                          width: `${opt.pct}%`,
-                          background: opt.barColor || '#e34119',
-                        }}
+                        style={{ width: `${opt.pct}%`, background: opt.barColor || '#e34119' }}
                       />
                     </div>
                   </button>
@@ -617,7 +663,6 @@ export default function CIPDayBreakdown({
               </>
             )}
 
-            {/* Category: Target Options */}
             {activeCategory === 'target' && (
               <>
                 <button
@@ -627,7 +672,6 @@ export default function CIPDayBreakdown({
                 >
                   All Targets
                 </button>
-
                 {targetOptions.map((opt) => (
                   <button
                     key={opt.id}
@@ -642,10 +686,7 @@ export default function CIPDayBreakdown({
                     <div className="cip-v2-macro-b-card-track">
                       <div
                         className="cip-v2-macro-b-card-fill"
-                        style={{
-                          width: `${opt.pct}%`,
-                          background: opt.barColor || '#e34119',
-                        }}
+                        style={{ width: `${opt.pct}%`, background: opt.barColor || '#e34119' }}
                       />
                     </div>
                   </button>
@@ -653,7 +694,6 @@ export default function CIPDayBreakdown({
               </>
             )}
 
-            {/* Category: Context Options */}
             {activeCategory === 'context' && (
               <>
                 <button
@@ -663,7 +703,6 @@ export default function CIPDayBreakdown({
                 >
                   All Contexts
                 </button>
-
                 {contextOptions.map((opt) => (
                   <button
                     key={opt.id}
@@ -678,46 +717,7 @@ export default function CIPDayBreakdown({
                     <div className="cip-v2-macro-b-card-track">
                       <div
                         className="cip-v2-macro-b-card-fill"
-                        style={{
-                          width: `${opt.pct}%`,
-                          background: opt.barColor || '#e34119',
-                        }}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </>
-            )}
-
-            {/* Category: Phase Options */}
-            {activeCategory === 'phase' && (
-              <>
-                <button
-                  type="button"
-                  className={`cip-v2-macro-b-all-btn ${selectedPhase === 'All' ? 'is-active' : ''}`}
-                  onClick={() => handleSelectOption('All')}
-                >
-                  All Phases
-                </button>
-
-                {phaseOptions.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`cip-v2-macro-b-card ${selectedPhase === opt.name ? 'is-selected' : ''}`}
-                    onClick={() => handleSelectOption(opt.name)}
-                  >
-                    <div className="cip-v2-macro-b-card-top">
-                      <span className="cip-v2-macro-b-card-title">{opt.name}</span>
-                      <span className="cip-v2-macro-b-card-pct">{opt.pct}%</span>
-                    </div>
-                    <div className="cip-v2-macro-b-card-track">
-                      <div
-                        className="cip-v2-macro-b-card-fill"
-                        style={{
-                          width: `${opt.pct}%`,
-                          background: opt.barColor || '#e34119',
-                        }}
+                        style={{ width: `${opt.pct}%`, background: opt.barColor || '#e34119' }}
                       />
                     </div>
                   </button>
@@ -726,14 +726,12 @@ export default function CIPDayBreakdown({
             )}
           </div>
 
-          {/* Scroll Right Button */}
           {canScrollRight && (
             <button
               type="button"
               className="cip-v2-macro-scroll-arrow is-right"
               onClick={() => handleScrollClick('right')}
               aria-label="Scroll right"
-              data-node-id="29416:7297"
             >
               <Icon name="chevron_right" size="medium" />
             </button>
@@ -741,22 +739,53 @@ export default function CIPDayBreakdown({
         </div>
       </div>
 
-      {/* ── 3. CAUSE BREAKDOWN & SIDE-PANEL (Figma 29327:41727) ── */}
+      {/* ── 3. PHASE DEVIATION & CONSOLIDATED ALERTS BREAKDOWN PANEL (Figma 29602-7550 & 29670-47956) ── */}
       <div className="cip-v2-causebreakdown-box" data-node-id="29327:41727">
-        {/* Left Column: Vertical Chart (Time Loss by Cause) */}
+        {/* Left Column: Phase Deviation (around 40% width) */}
         <div className="cip-v2-causes-col">
           <div className="cip-v2-causes-header">
-            <h3 className="cip-v2-causes-title">Time Loss by Cause</h3>
+            <h3 className="cip-v2-causes-title">Phase Deviation</h3>
+
+            {/* 3 Modes Switcher: Totals, Ramp-up, Skipped */}
+            <div className="cip-v2-deviation-mode-toggle" role="tablist" aria-label="Phase deviation view mode">
+              <button
+                type="button"
+                className={`cip-v2-mode-btn ${deviationMode === 'totals' ? 'is-active' : ''}`}
+                onClick={() => setDeviationMode('totals')}
+                role="tab"
+                aria-selected={deviationMode === 'totals'}
+              >
+                Totals
+              </button>
+              <button
+                type="button"
+                className={`cip-v2-mode-btn ${deviationMode === 'ramp-up' ? 'is-active' : ''}`}
+                onClick={() => setDeviationMode('ramp-up')}
+                role="tab"
+                aria-selected={deviationMode === 'ramp-up'}
+              >
+                Ramp-up
+              </button>
+              <button
+                type="button"
+                className={`cip-v2-mode-btn ${deviationMode === 'skipped' ? 'is-active' : ''}`}
+                onClick={() => setDeviationMode('skipped')}
+                role="tab"
+                aria-selected={deviationMode === 'skipped'}
+              >
+                Skipped
+              </button>
+            </div>
           </div>
 
           <div className="cip-v2-causes-list-container">
-            {/* Vertical Reference Line across the bars */}
+            {/* Reference Line overlay */}
             <div
               className="cip-v2-ref-line-overlay"
               style={{ left: `calc(143px + 12px + (100% - 143px - 44px) * ${refLinePct / 100})` }}
             >
-              <div className="cip-v2-ref-label" style={{ color: chartColor }}>{refLineLabel}</div>
-              <div className="cip-v2-ref-line" style={{ background: chartColor }} />
+              <div className="cip-v2-ref-label" style={{ color: phaseDeviationChartColor }}>{refLineLabel}</div>
+              <div className="cip-v2-ref-line" style={{ background: phaseDeviationChartColor }} />
             </div>
 
             {/* Vertical Stack of Cause rows */}
@@ -769,29 +798,42 @@ export default function CIPDayBreakdown({
                     key={`${cause.name}-${index}`}
                     className={`cip-v2-cause-row ${isSelected ? 'is-selected' : ''}`}
                     onClick={() => setSelectedCause(cause.name)}
-                    style={isSelected ? { borderColor: chartColor } : undefined}
+                    style={isSelected ? { borderColor: phaseDeviationChartColor } : undefined}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Select ${cause.name} root cause`}
+                    aria-label={`Select ${cause.name} deviation`}
                   >
-                    {/* Cause Title & Subtitle */}
                     <div className="cip-v2-cause-label-box">
                       <span className="cip-v2-cause-name">{cause.name}</span>
-                      <span className="cip-v2-cause-subtext">{cause.subtext}</span>
+                      <span className="cip-v2-cause-subtext">
+                        {deviationMode === 'totals' && (
+                          <>
+                            <strong>{cause.lostMinutes}m</strong> ({cause.pct}%)
+                          </>
+                        )}
+                        {deviationMode === 'ramp-up' && (
+                          <>
+                            <strong>{cause.rampMinutes}m</strong> ramp-up • <strong>{cause.lostMinutes}m</strong> lost
+                          </>
+                        )}
+                        {deviationMode === 'skipped' && (
+                          <>
+                            <strong>{cause.skipCount} {cause.skipCount === 1 ? 'skip' : 'skips'}</strong> • <strong>{cause.lostMinutes}m</strong> lost
+                          </>
+                        )}
+                      </span>
                     </div>
 
-                    {/* Horizontal Bar Track & Fill */}
                     <div className="cip-v2-cause-bar-track">
                       <div
                         className="cip-v2-cause-bar-fill"
                         style={{
                           width: `${cause.pct}%`,
-                          background: chartColor,
+                          background: phaseDeviationChartColor,
                         }}
                       />
                     </div>
 
-                    {/* Chevron Arrow */}
                     <div className="cip-v2-cause-chevron">
                       <Icon name="chevron_right" size="medium" />
                     </div>
@@ -802,99 +844,116 @@ export default function CIPDayBreakdown({
           </div>
         </div>
 
-        {/* Right Column: Side-Panel (Root Cause Details) */}
+        {/* Right Column: Consolidated Alerts Breakdown Sidepanel (around 60% width) - 3 Simple Blocks (Figma 29670:47956) */}
         <div className="cip-v2-sidepanel-col">
-          {/* Header */}
-          <div className="cip-v2-panel-header">
-            <h2 className="cip-v2-panel-title">{currentCauseData.displayTitle}</h2>
-            <h3 className="cip-v2-panel-subtitle">Root Cause Details</h3>
+          {/* BLOCK 1: Title and Description */}
+          <div className="cip-v2-panel-block is-title-block">
+            <div className="cip-v2-panel-title-row">
+              <h2 className="cip-v2-panel-title">{selectedCause}</h2>
+              <span className="cip-v2-panel-badge">Phase Deviation Alert</span>
+            </div>
+            <p className="cip-v2-panel-description">
+              {currentCauseDescription}
+            </p>
           </div>
 
-          {/* Secondary Tabs */}
-          <div className="cip-v2-panel-tabs">
-            <button
-              type="button"
-              className={`cip-v2-panel-tab-item ${activeTab === 'summary' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('summary')}
-            >
-              Summary
-            </button>
-            <button
-              type="button"
-              className={`cip-v2-panel-tab-item ${activeTab === 'locations' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('locations')}
-            >
-              Locations
-            </button>
-            <button
-              type="button"
-              className={`cip-v2-panel-tab-item ${activeTab === 'actions' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('actions')}
-            >
-              Actions
-            </button>
+          {/* BLOCK 2: Alert Metrics (Shift metric removed) */}
+          <div className="cip-v2-panel-block is-metrics-block">
+            <div className="cip-v2-panel-metric-card">
+              <span className="cip-v2-panel-metric-label">Time Lost</span>
+              <span className="cip-v2-panel-metric-val">{currentMetrics.timeLost}</span>
+            </div>
+            <div className="cip-v2-panel-metric-card">
+              <span className="cip-v2-panel-metric-label">Occurrences</span>
+              <span className="cip-v2-panel-metric-val">{currentMetrics.occurrences}</span>
+            </div>
+            <div className="cip-v2-panel-metric-card">
+              <span className="cip-v2-panel-metric-label">Runs Affected</span>
+              <span className="cip-v2-panel-metric-val">{currentMetrics.runsAffected}</span>
+            </div>
+            <div className="cip-v2-panel-metric-card">
+              <span className="cip-v2-panel-metric-label">Worst Line</span>
+              <span className="cip-v2-panel-metric-val">{currentMetrics.worstLine}</span>
+            </div>
           </div>
 
-          {/* Tab 1: Summary */}
-          {activeTab === 'summary' && (
-            <div className="cip-v2-panel-summary-grid">
-              <div className="cip-v2-panel-metric-card">
-                <span className="cip-v2-panel-metric-label">Time Lost</span>
-                <span className="cip-v2-panel-metric-val">{currentCauseData.summary.timeLost}</span>
-              </div>
-              <div className="cip-v2-panel-metric-card">
-                <span className="cip-v2-panel-metric-label">Occurrencies</span>
-                <span className="cip-v2-panel-metric-val">{currentCauseData.summary.occurrences}</span>
-              </div>
-              <div className="cip-v2-panel-metric-card">
-                <span className="cip-v2-panel-metric-label">Runs Affected</span>
-                <span className="cip-v2-panel-metric-val">{currentCauseData.summary.runsAffected}</span>
-              </div>
-              <div className="cip-v2-panel-metric-card">
-                <span className="cip-v2-panel-metric-label">Worst Time</span>
-                <span className="cip-v2-panel-metric-val">{currentCauseData.summary.worstTime}</span>
-              </div>
-              <div className="cip-v2-panel-metric-card">
-                <span className="cip-v2-panel-metric-label">Shift</span>
-                <span className="cip-v2-panel-metric-val">{currentCauseData.summary.shift}</span>
-              </div>
+          {/* BLOCK 3: Alerts by Time Table (with ellipsis & whole row clickable to open modal) */}
+          <div className="cip-v2-panel-block is-table-block">
+            <div className="cip-v2-alerts-table-header-row">
+              <h4 className="cip-v2-alerts-table-title">Alerts by Time</h4>
+              <span className="cip-v2-alerts-table-count">{currentAlerts.length} recorded</span>
             </div>
-          )}
 
-          {/* Tab 2: Locations */}
-          {activeTab === 'locations' && (
-            <div className="cip-v2-panel-locations-list">
-              {currentCauseData.locations.map((loc) => (
-                <div key={loc.id} className="cip-v2-panel-loc-row">
-                  <div className="cip-v2-panel-loc-left">
-                    <div className="cip-v2-panel-loc-title">{loc.title}</div>
-                    <div className="cip-v2-panel-loc-sub">{loc.subtitle}</div>
-                  </div>
-                  <div className="cip-v2-panel-loc-right">
-                    <span className="cip-v2-panel-loc-line">{loc.line}</span>
-                    <span className="cip-v2-panel-loc-time">{loc.lostTime}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            <div className="cip-v2-alerts-table-container">
+              <div className="cip-v2-alerts-table-head">
+                <span className="cip-col-name">Alert Name</span>
+                <span className="cip-col-events">Events</span>
+                <span className="cip-col-lost">Time Lost</span>
+                <span className="cip-col-pareto">Impact</span>
+                <span className="cip-col-action"></span>
+              </div>
 
-          {/* Tab 3: Actions */}
-          {activeTab === 'actions' && (
-            <div className="cip-v2-panel-actions-list">
-              {currentCauseData.actions.map((act) => (
-                <div key={act.id} className="cip-v2-panel-act-row">
-                  <div className="cip-v2-panel-act-timeframe">{act.timeframe}</div>
-                  <div className="cip-v2-panel-act-content">
-                    <div className="cip-v2-panel-act-category">{act.category}</div>
-                    <div className="cip-v2-panel-act-desc">{act.description}</div>
+              <div className="cip-v2-alerts-table-body">
+                {currentAlerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="cip-v2-alert-row"
+                    onClick={() => handleOpenAlertModal(alert)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View full breakdown for ${alert.name}`}
+                  >
+                    <div className="cip-col-name">
+                      <span className="cip-alert-row-name">{alert.name}</span>
+                      <span className="cip-alert-row-sub">{alert.subtitle}</span>
+                    </div>
+
+                    <div className="cip-col-events">
+                      <span className="cip-alert-events-badge">{alert.eventsCount}x</span>
+                    </div>
+
+                    <div className="cip-col-lost">
+                      <span className="cip-alert-time-lost">{alert.lostTime}</span>
+                    </div>
+
+                    <div className="cip-col-pareto">
+                      <div className="cip-mini-pareto-track">
+                        <div
+                          className="cip-mini-pareto-fill"
+                          style={{ width: `${alert.paretoPct}%`, background: phaseDeviationChartColor }}
+                        />
+                      </div>
+                      <span className="cip-mini-pareto-pct">{alert.paretoPct}%</span>
+                    </div>
+
+                    <div className="cip-col-action">
+                      <button
+                        type="button"
+                        className="cip-alert-ellipsis-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenAlertModal(alert);
+                        }}
+                        aria-label={`More details for ${alert.name}`}
+                      >
+                        <Icon name="more_vert" size="medium" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
+
+      {/* ── 4. FULL ALERT BREAKDOWN MODAL (Comments & Events tabs - Figma 29693:48809) ── */}
+      <CIPRootCauseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        alertData={selectedAlertForModal}
+        levelColor={phaseDeviationChartColor}
+      />
     </div>
   );
 }
